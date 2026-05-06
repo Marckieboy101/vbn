@@ -40,7 +40,7 @@ export const LandingScreen: React.FC = () => {
           className="px-12 py-6 glass-red rounded-full group overflow-hidden"
         >
           <span className="text-2xl font-display font-medium uppercase tracking-widest text-brand group-hover:text-white transition-colors">
-            Initialize Experience
+            Start Hier
           </span>
           <div className="absolute inset-0 bg-brand/20 opacity-0 group-hover:opacity-100 transition-opacity" />
         </InteractiveButton>

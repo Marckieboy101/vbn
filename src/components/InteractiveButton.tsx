@@ -9,6 +9,7 @@ interface InteractiveElementProps {
   className?: string;
   hoverDuration?: number; // ms
   disabled?: boolean;
+  activateOnPointerHover?: boolean;
 }
 
 export const InteractiveButton: React.FC<InteractiveElementProps> = ({ 
@@ -16,12 +17,53 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
   onClick, 
   className, 
   hoverDuration = 2000,
-  disabled 
+  disabled,
+  activateOnPointerHover = false
 }) => {
   const { x, y, isVisible } = useGesture();
   const ref = useRef<HTMLDivElement>(null);
+  const pointerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoverTime, setHoverTime] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isPointerHovered, setIsPointerHovered] = useState(false);
+
+  const clearPointerTimer = () => {
+    if (pointerTimerRef.current) {
+      clearTimeout(pointerTimerRef.current);
+      pointerTimerRef.current = null;
+    }
+  };
+
+  const startPointerHover = () => {
+    if (!activateOnPointerHover || disabled || pointerTimerRef.current) return;
+
+    setIsPointerHovered(true);
+    pointerTimerRef.current = setTimeout(() => {
+      pointerTimerRef.current = null;
+      onClick?.();
+    }, hoverDuration);
+  };
+
+  const endPointerHover = () => {
+    setIsPointerHovered(false);
+    clearPointerTimer();
+  };
+
+  const handleClick = () => {
+    if (disabled) return;
+
+    clearPointerTimer();
+    onClick?.();
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled || (event.key !== 'Enter' && event.key !== ' ')) return;
+
+    event.preventDefault();
+    handleClick();
+  };
+
+  useEffect(() => clearPointerTimer, []);
 
   useEffect(() => {
     if (!isVisible || disabled) {
@@ -59,13 +101,22 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
   }, [x, y, isVisible, hoverDuration, onClick, disabled]);
 
   const progress = (hoverTime / hoverDuration) * 100;
+  const showHoverState = isHovered || isPointerHovered;
 
   return (
     <div 
       ref={ref}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onPointerEnter={startPointerHover}
+      onPointerLeave={endPointerHover}
       className={cn(
         "relative overflow-hidden transition-all duration-300",
-        isHovered ? "scale-105" : "scale-100",
+        disabled ? "pointer-events-none opacity-50" : "cursor-pointer",
+        showHoverState ? "scale-105" : "scale-100",
         className
       )}
     >
@@ -83,7 +134,7 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
       {/* Hover Edge Glow */}
       <motion.div
         className="absolute inset-0 border border-brand/50 rounded-inherit pointer-events-none"
-        animate={{ opacity: isHovered ? 1 : 0 }}
+        animate={{ opacity: showHoverState ? 1 : 0 }}
       />
     </div>
   );
