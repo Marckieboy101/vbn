@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "Session": {
+      "title": "User Session",
+      "description": "Interaction data for a single user visit.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "genres": { "type": "array", "items": { "type": "string" } },
+        "answers": { "type": "object" },
+        "recommendations": { "type": "string" },
+        "duration": { "type": "number" },
+        "completed": { "type": "boolean" },
+        "timestamp": { "type": "number" },
+        "interactionPatterns": { "type": "object" }
+      },
+      "required": ["sessionId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Stored user interaction data."
+    }
+  }
+}
