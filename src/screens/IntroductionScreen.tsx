@@ -31,37 +31,37 @@ export const IntroductionScreen: React.FC = () => {
       >
         <header className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tight mb-4">
-            Gesture Control <span className="text-brand">Protocol</span>
+            Gebaarbediening <span className="text-brand">Protocol</span>
           </h2>
           <p className="text-white/40 max-w-xl mx-auto">
-            Use your computer webcam to interact with the experience. 
-            Ensure your hand is clearly visible.
+            Gebruik je webcam om interactie te hebben met de ervaring. 
+            Zorg dat je hand duidelijk zichtbaar is.
           </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
           <InstructionCard 
             icon={<Move className="w-8 h-8" />}
-            title="Navigate"
-            text="Move your index finger to control the cursor."
+            title="Navigeren"
+            text="Beweeg je wijsvinger om de cursor te besturen."
             delay={0.2}
           />
           <InstructionCard 
             icon={<MousePointer2 className="w-8 h-8" />}
-            title="Select"
-            text="Hover over elements for 2 seconds to interact."
+            title="Selecteren"
+            text="Beweeg over elementen gedurende 3 seconden voor interactie."
             delay={0.4}
           />
           <InstructionCard 
             icon={<Hand className="w-8 h-8" />}
-            title="Pinch"
-            text="Pinch thumb and index to drag sliders."
+            title="Knijpen"
+            text="Knijp duim en wijsvinger samen om schuifregelaars te slepen."
             delay={0.6}
           />
           <InstructionCard 
             icon={<ThumbsUp className="w-8 h-8" />}
-            title="Confirm"
-            text="A thumbs up will confirm your final choice."
+            title="Bevestigen"
+            text="Een duim omhoog bevestigt je uiteindelijke keuze."
             delay={0.8}
           />
         </div>
@@ -69,10 +69,10 @@ export const IntroductionScreen: React.FC = () => {
         <div className="flex justify-center">
           <InteractiveButton 
             onClick={() => setStep('genre')}
-            className="px-16 py-5 glass rounded-full bg-white/5 hover:bg-white/10 transition-all"
+            className="px-12 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all"
           >
-            <span className="text-xl font-display font-medium uppercase tracking-widest">
-              Calibrate & Proceed
+            <span className="text-base font-display font-medium uppercase tracking-widest">
+              Kalibreren & Doorgaan
             </span>
           </InteractiveButton>
         </div>

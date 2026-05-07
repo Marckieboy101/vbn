@@ -6,35 +6,58 @@ import { Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const GENRES = [
-  { id: 'horror', label: 'Horror', color: 'from-red-900/40' },
-  { id: 'comedy', label: 'Comedy', color: 'from-amber-900/40' },
-  { id: 'sports', label: 'Sports', color: 'from-blue-900/40' },
-  { id: 'thriller', label: 'Thriller', color: 'from-purple-900/40' },
-  { id: 'adventure', label: 'Adventure', color: 'from-emerald-900/40' },
-  { id: 'romance', label: 'Romance', color: 'from-pink-900/40' },
+  { 
+    id: 'horror', 
+    label: 'Horror', 
+    color: 'from-red-950/80', 
+    image: 'https://images.unsplash.com/photo-1505634467193-705779771379?auto=format&fit=crop&q=80&w=800' 
+  },
+  { 
+    id: 'comedy', 
+    label: 'Komedie', 
+    color: 'from-amber-950/80', 
+    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800' 
+  },
+  { 
+    id: 'sports', 
+    label: 'Sport', 
+    color: 'from-blue-950/80', 
+    image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800' 
+  },
+  { 
+    id: 'thriller', 
+    label: 'Thriller', 
+    color: 'from-purple-950/80', 
+    image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=800' 
+  },
+  { 
+    id: 'adventure', 
+    label: 'Avontuur', 
+    color: 'from-emerald-950/80', 
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800' 
+  },
+  { 
+    id: 'romance', 
+    label: 'Romantiek', 
+    color: 'from-pink-950/80', 
+    image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
+  },
 ];
 
 export const GenreSelectionScreen: React.FC = () => {
   const { selectedGenres, toggleGenre, setStep } = useStore();
 
   return (
-    <div className="min-h-screen flex flex-col p-8 pt-20 max-w-7xl mx-auto">
-      <header className="mb-12 text-center">
-        <motion.span 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-brand font-mono text-sm tracking-[0.3em] uppercase mb-4 block"
-        >
-          Phase 01 / Perception
-        </motion.span>
-        <h2 className="text-5xl font-display font-bold uppercase mb-4">Select your <span className="text-brand">Vibe</span></h2>
-        <p className="text-white/40 max-w-2xl mx-auto">
-          Hover to toggle categories that resonate with your current mood. 
-          We'll use these to calibrate your cultural recommendation.
+    <div className="min-h-screen flex flex-col p-8 pt-20 max-w-[1400px] mx-auto justify-center">
+      <header className="mb-16 text-center">
+        <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Sfeer</span></h2>
+        <p className="text-white/40 max-w-xl mx-auto text-base">
+          Beweeg over de categorieën die passen bij je huidige stemming. 
+          De AI gebruikt deze informatie voor je aanbeveling.
         </p>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-20">
         {GENRES.map((genre, idx) => {
           const isSelected = selectedGenres.includes(genre.id);
           return (
@@ -42,34 +65,60 @@ export const GenreSelectionScreen: React.FC = () => {
               key={genre.id}
               onClick={() => toggleGenre(genre.id)}
               className={cn(
-                "relative h-64 rounded-[2rem] border overflow-hidden",
+                "relative h-48 rounded-3xl border overflow-hidden bg-black group",
                 isSelected ? "border-brand shadow-[0_0_30px_rgba(225,29,72,0.2)]" : "border-white/10 glass hover:border-white/30"
               )}
             >
-              <div className={cn("absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-700", genre.color, isSelected ? "opacity-100" : "opacity-0")} />
-              
-              <div className="absolute inset-0 p-8 flex flex-col justify-between items-start">
+              {isSelected && (
+                <motion.div
+                  layoutId={`pulse-${genre.id}`}
+                  className="absolute inset-0 z-0 bg-brand/5"
+                  animate={{
+                    opacity: [0.3, 0.6, 0.3],
+                    scale: [1, 1.02, 1],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 z-0">
+                <img 
+                  src={genre.image} 
+                  alt={genre.label}
+                  className={cn(
+                    "w-full h-full object-cover transition-all duration-700",
+                    isSelected ? "scale-110 opacity-70 saturate-150" : "scale-100 opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60"
+                  )}
+                  referrerPolicy="no-referrer"
+                />
                 <div className={cn(
-                  "w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-500",
+                  "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-700", 
+                  genre.color, 
+                  isSelected ? "opacity-100" : "opacity-40"
+                )} />
+              </div>
+              
+              <div className="absolute inset-0 p-6 flex flex-col justify-between items-start z-10">
+                <div className={cn(
+                  "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-500",
                   isSelected ? "bg-brand border-brand scale-110" : "border-white/20"
                 )}>
                   <AnimatePresence>
                     {isSelected && (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                        <Check className="w-6 h-6 text-white" />
+                        <Check className="w-5 h-5 text-white" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
                 
                 <div className="text-left">
-                  <span className="text-white/30 font-mono text-xs mb-1 block">CAT_0{idx + 1}</span>
-                  <h3 className="text-3xl font-display font-bold uppercase tracking-tight">{genre.label}</h3>
+                  <h3 className="text-xl font-display font-bold uppercase tracking-tight">{genre.label}</h3>
                 </div>
               </div>
-
-              {/* Decorative scanline */}
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-brand/30 animate-scanline pointer-events-none" />
             </InteractiveButton>
           );
         })}
@@ -80,11 +129,11 @@ export const GenreSelectionScreen: React.FC = () => {
           disabled={selectedGenres.length === 0}
           onClick={() => setStep('questions')}
           className={cn(
-            "px-20 py-6 rounded-full transition-all duration-500",
+            "px-12 py-4 rounded-full transition-all duration-500",
             selectedGenres.length > 0 ? "glass-red" : "opacity-20 cursor-not-allowed"
           )}
         >
-          <span className="text-xl font-display font-medium uppercase tracking-[0.2em]">Next Protocol</span>
+          <span className="text-base font-display font-medium uppercase tracking-[0.2em]">Volgend Protocol</span>
         </InteractiveButton>
       </div>
     </div>

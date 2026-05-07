@@ -3,7 +3,7 @@ import { motion, useSpring, useMotionValue } from 'motion/react';
 import { useGesture } from './GestureProvider';
 
 export const FuturisticCursor: React.FC = () => {
-  const { x, y, isPinching, isVisible } = useGesture();
+  const { x, y, isVisible } = useGesture();
   
   const springConfig = { damping: 25, stiffness: 200 };
   const cursorX = useSpring(useMotionValue(window.innerWidth / 2), springConfig);
@@ -24,17 +24,18 @@ export const FuturisticCursor: React.FC = () => {
       {/* Outer Core */}
       <motion.div 
         animate={{ 
-          scale: isPinching ? 0.8 : 1,
-          rotate: isPinching ? 45 : 0
+          rotate: [0, 90, 180, 270, 360]
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "linear"
         }}
         className="absolute inset-0 border-2 border-brand rounded-lg shadow-[0_0_15px_rgba(225,29,72,0.8)]" 
       />
       
       {/* Inner Dot */}
-      <motion.div 
-        animate={{ scale: isPinching ? 1.5 : 1 }}
-        className="w-1.5 h-1.5 bg-white rounded-full" 
-      />
+      <div className="w-1.5 h-1.5 bg-white rounded-full" />
 
       {/* Trailing Glow */}
       <div className="absolute inset-0 bg-brand/20 blur-xl rounded-full scale-150" />

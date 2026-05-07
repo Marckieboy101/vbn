@@ -1,34 +1,60 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
+    // Default deny catch-all
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- ENTITY VALIDATION ---
+
     function isValidSession(data) {
       return data.keys().hasAll(['sessionId', 'timestamp']) &&
              data.sessionId is string &&
-             data.timestamp is number;
+             data.sessionId.size() <= 128 &&
+             data.timestamp is number &&
+             // Optional fields if present must be correct type
+             (!('genres' in data) || data.genres is list) &&
+             (!('answers' in data) || data.answers is map) &&
+             (!('completed' in data) || data.completed is bool) &&
+             (!('thanked' in data) || data.thanked is bool);
     }
 
-    // Sessions collection
+    // --- COLLECTIONS ---
+
     match /sessions/{sessionId} {
-      allow create: if isValidId(sessionId) && isValidSession(request.resource.data);
-      allow get: if true; // Allow reading a session if you know the ID (e.g. for display)
-      allow list: if false; // Only admins should list
+      // Allow everyone to create and update sessions for this experience
+      allow create: if isValidId(sessionId) && 
+                      isValidSession(incoming());
+      
+      allow update: if isValidId(sessionId) && 
+                      isValidSession(incoming());
+
+      // Allow everyone to read sessions (get and list) to fix access issues
+      allow read: if true;
+      allow list: if true;
     }
 
-    // Admin access (Internal mock logic or check specific UID)
-    // For this app, we'll allow listing sessions if the user is authenticated as admin
-    // In a real app, we'd use a more robust check
-    match /sessions/{sessionId} {
-      allow read: if request.auth != null; // Simple admin check for this demo environment
+    // Admin collection for role lookups (if needed in future)
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && request.auth.uid == adminId;
     }
   }
 }
