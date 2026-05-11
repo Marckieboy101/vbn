@@ -7,10 +7,10 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const QUESTIONS = [
-  { id: 'duration', text: "Ik geniet van lange, epische films die een complexe wereld opbouwen.", min: "Wel", max: "Niet" },
-  { id: 'immersion', text: "Ik wil volledig ondergedompeld worden in een virtuele omgeving.", min: "Wel", max: "Niet" },
-  { id: 'social', text: "Ik deel culturele ervaringen het liefst met een grote groep.", min: "Alleen", max: "Met Vrienden" },
-  { id: 'breaks', text: "Ik waardeer af en toe een pauze voor reflectie tijdens digitale kunst.", min: "Ja", max: "Nee" },
+  { id: 'duration', text: "Ik geniet van lange, epische films die een complexe wereld opbouwen.", min: "Kort", max: "Episch" },
+  { id: 'immersion', text: "Ik wil volledig ondergedompeld worden in een virtuele omgeving.", min: "Passief", max: "Meeslepend" },
+  { id: 'social', text: "Ik deel culturele ervaringen het liefst met een grote groep.", min: "Solo", max: "Sociaal" },
+  { id: 'breaks', text: "Ik waardeer af en toe een pauze voor reflectie tijdens digitale kunst.", min: "Continu", max: "Gedoseerd" },
 ];
 
 export const QuestionFlowScreen: React.FC = () => {
@@ -33,7 +33,7 @@ export const QuestionFlowScreen: React.FC = () => {
   const prev = () => {
     if (currentIdx > 0) {
       setCurrentIdx(currentIdx - 1);
-      setShowContinue(true);
+      setShowContinue(true); // Since it was already answered
     }
   };
 
@@ -72,6 +72,7 @@ export const QuestionFlowScreen: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
+      {/* Navigation - Fixed at bottom */}
       <div className="fixed bottom-12 left-0 w-full flex justify-center items-center pointer-events-none z-50">
         <div className="flex items-center gap-4 pointer-events-auto">
           <AnimatePresence>

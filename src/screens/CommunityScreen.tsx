@@ -34,7 +34,7 @@ export const CommunityScreen: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="text-5xl md:text-7xl font-display font-bold uppercase mb-12 tracking-tight leading-none"
         >
-          Join <span className="text-brand">de</span> <br />Community
+          Join <span className="text-brand">the</span> <br />Community
         </motion.h1>
 
         <motion.div 
