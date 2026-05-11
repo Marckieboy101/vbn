@@ -26,7 +26,7 @@ export const QuestionFlowScreen: React.FC = () => {
       setCurrentIdx(currentIdx + 1);
       setShowContinue(false);
     } else {
-      setStep('social');
+      setStep('feedback_thanks');
     }
   };
 

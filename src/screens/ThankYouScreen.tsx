@@ -71,7 +71,7 @@ export const ThankYouScreen: React.FC = () => {
           transition={{ delay: 0.4 }}
           className="text-xl text-white/60 mb-12 leading-relaxed"
         >
-          Laat ons je mening horen!
+          We hopen je snel te zien in Theater van Beresteyn.
         </motion.p>
 
         <motion.div 
