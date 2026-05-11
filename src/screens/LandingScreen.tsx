@@ -21,8 +21,7 @@ export const LandingScreen: React.FC = () => {
         </h1>
 
         <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-          Stap in een futuristische cinematografische wereld waar AI en cultuur samenkomen. 
-          Bedien de ervaring met je handen en ontdek je digitale voorkeursprofiel.
+          Geef ons jouw mening en join de leukste community voor film liefhebbers
         </p>
 
         <InteractiveButton 

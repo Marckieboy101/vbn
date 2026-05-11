@@ -120,7 +120,7 @@ export const GenreSelectionScreen: React.FC = () => {
       <div className="flex justify-center">
         <InteractiveButton
           disabled={selectedGenres.length === 0}
-          onClick={() => setStep('questions')}
+          onClick={() => setStep('instructions')}
           className={cn(
             "px-12 py-4 rounded-full transition-all duration-500",
             selectedGenres.length > 0 ? "glass-red" : "opacity-20 cursor-not-allowed"

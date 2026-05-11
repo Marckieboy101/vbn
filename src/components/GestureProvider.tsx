@@ -44,10 +44,23 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let activeCamera: any = null;
     let isTerminated = false;
 
-    const startCamera = async () => {
+    const startCamera = async (isRetry = false) => {
       try {
         if (isTerminated) return;
         
+        // Small delay for initial start to let browser settle
+        if (!isRetry) await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Ensure any previous tracks are stopped before starting new ones
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => {
+            track.stop();
+            console.log("Stopped existing track:", track.label);
+          });
+          videoRef.current.srcObject = null;
+        }
+
         // @ts-ignore
         window.Module = window.Module || {};
         // @ts-ignore
@@ -131,33 +144,38 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
             await camera.start();
             setState(prev => ({ ...prev, error: null }));
           } catch (cameraErr: any) {
-            console.error("MediaPipe Camera.start failed, trying manual stream:", cameraErr);
+            console.warn("MediaPipe Camera.start failed, attempting simplified fallback:", cameraErr);
             
-            // Fallback for NotReadableError - usually solved by trying a simpler constraint
-            // or just waiting a moment
+            // Fallback strategy: try getUserMedia with minimal constraints
             try {
+              // First try with some preferences
               const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
-                  width: { ideal: 640 }, 
-                  height: { ideal: 480 },
-                  facingMode: "user"
+                  facingMode: "user",
+                  width: { ideal: 640 },
+                  height: { ideal: 480 }
                 } 
+              }).catch(() => {
+                // If that fails, try REALLY minimal
+                console.log("Ideal constraints failed, trying absolute minimum");
+                return navigator.mediaDevices.getUserMedia({ video: true });
               });
               
               if (videoRef.current && !isTerminated) {
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
-                
-                // If Camera.start() failed but we got the stream, we might need a manual frame loop
-                // if the Camera object doesn't pick it up automatically.
-                // However, usually we should try to restart the Camera with the existing stream if possible.
-                // But camera_utils doesn't support that easily.
-                
-                // Let's just report success if we got the stream, the onFrame might still work
-                // if Camera class internally attached listeners to the video element.
                 setState(prev => ({ ...prev, error: null }));
               }
             } catch (fallbackErr: any) {
+              console.error("All camera fallback attempts failed:", fallbackErr);
+              
+              // If we haven't retried yet and it's a NotReadableError, try once more after a delay
+              if (!isRetry && (fallbackErr.name === 'NotReadableError' || cameraErr.name === 'NotReadableError')) {
+                console.log("NotReadableError detected, attempting single retry after 2s...");
+                setTimeout(() => startCamera(true), 2000);
+                return;
+              }
+              
               throw fallbackErr;
             }
           }
@@ -170,7 +188,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (err.name === 'NotAllowedError') {
           errorMsg = "Toegang geweigerd - Schakel camera in je browserinstellingen in.";
         } else if (err.name === 'NotReadableError' || err.message?.includes('could not start')) {
-          errorMsg = "Camera in gebruik door een ander programma of tabblad. Sluit andere video-apps af.";
+          errorMsg = "De camera lijkt geblokkeerd of in gebruik door een ander tabblad/programma (zoals Teams of Zoom). Sluit andere video-apps en ververs de pagina.";
         } else if (err.name === 'NotFoundError') {
           errorMsg = "Geen camera gedetecteerd op dit apparaat.";
         } else {

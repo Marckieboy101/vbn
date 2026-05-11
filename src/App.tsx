@@ -14,6 +14,7 @@ import { FuturisticCursor } from './components/FuturisticCursor';
 import { LandingScreen } from './screens/LandingScreen';
 import { IntroductionScreen } from './screens/IntroductionScreen';
 import { GenreSelectionScreen } from './screens/GenreSelectionScreen';
+import { InstructionsScreen } from './screens/InstructionsScreen';
 import { QuestionFlowScreen } from './screens/QuestionFlowScreen';
 import { CommunityScreen } from './screens/CommunityScreen';
 import { ThankYouScreen } from './screens/ThankYouScreen';
@@ -82,6 +83,7 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
     case 'landing': return <LandingScreen />;
     case 'intro': return <IntroductionScreen />;
     case 'genre': return <GenreSelectionScreen />;
+    case 'instructions': return <InstructionsScreen />;
     case 'questions': return <QuestionFlowScreen />;
     case 'social': return <CommunityScreen />;
     case 'thankyou': return <ThankYouScreen />;
