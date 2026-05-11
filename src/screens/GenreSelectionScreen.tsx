@@ -46,7 +46,7 @@ export const GenreSelectionScreen: React.FC = () => {
       <header className="mb-16 text-center">
         <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Sfeer</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-base">
-          Selecteer een genre dat je leuk vind
+          Selecteer een genre dat je leuk vindt
         </p>
       </header>
 
@@ -117,7 +117,16 @@ export const GenreSelectionScreen: React.FC = () => {
         })}
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-6">
+        <InteractiveButton 
+          onClick={() => setStep('intro')}
+          className="px-8 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group"
+        >
+          <span className="text-base font-display font-medium uppercase tracking-[0.2em] text-white/60 group-hover:text-white transition-colors">
+            Vorige
+          </span>
+        </InteractiveButton>
+
         <InteractiveButton
           disabled={selectedGenres.length === 0}
           onClick={() => setStep('genre_confirmed')}

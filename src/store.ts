@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { soundManager } from './lib/sound';
 
 interface ExperienceState {
-  step: 'landing' | 'intro' | 'genre' | 'genre_confirmed' | 'instructions' | 'questions' | 'thankyou' | 'recommendation' | 'social' | 'final';
+  step: 'landing' | 'intro' | 'genre' | 'genre_confirmed' | 'instructions' | 'questions' | 'thankyou' | 'social' | 'final';
   selectedGenres: string[];
   answers: Record<string, number>;
   recommendation: string | null;

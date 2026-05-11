@@ -51,7 +51,16 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Small delay for initial start to let browser settle
         if (!isRetry) await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Ensure any previous tracks are stopped before starting new ones
+        // Thorough cleanup of existing state before starting a new instance
+        if (activeCamera) {
+          try { activeCamera.stop(); } catch (e) {}
+          activeCamera = null;
+        }
+        if (activeHands) {
+          try { activeHands.close(); } catch (e) {}
+          activeHands = null;
+        }
+
         if (videoRef.current && videoRef.current.srcObject) {
           const stream = videoRef.current.srcObject as MediaStream;
           stream.getTracks().forEach(track => {

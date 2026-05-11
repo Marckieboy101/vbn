@@ -10,7 +10,7 @@ export const ThankYouScreen: React.FC = () => {
   const { reset, sessionId, selectedGenres, answers } = useStore();
 
   useEffect(() => {
-    // Save the interaction data as "completed" even if we don't show a recommendation
+    // Save the interaction data as "completed"
     const saveProgress = async () => {
       try {
         await setDoc(doc(db, 'sessions', sessionId), {
@@ -26,7 +26,14 @@ export const ThankYouScreen: React.FC = () => {
       }
     };
     saveProgress();
-  }, [sessionId, selectedGenres, answers]);
+
+    // Auto-reset timer (10 seconds)
+    const timer = setTimeout(() => {
+      reset();
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [sessionId, selectedGenres, answers, reset]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 overflow-hidden relative">

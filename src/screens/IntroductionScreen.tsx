@@ -31,42 +31,37 @@ export const IntroductionScreen: React.FC = () => {
       >
         <header className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tight mb-4">
-            Gebaarbediening
+            Genre Selectie <span className="text-brand">Instructies</span>
           </h2>
+          <p className="text-white/40 max-w-xl mx-auto font-light leading-relaxed">
+            Gebruik je hand om je favoriete genre te selecteren. Volg de onderstaande gebaren voor de beste ervaring.
+          </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           <InstructionCard 
             icon={<Move className="w-8 h-8" />}
             title="Navigeren"
-            text="Beweeg je hand om de experience te besturen."
+            text="Beweeg je hand over het scherm om door de genres te bladeren."
             delay={0.2}
           />
           <InstructionCard 
             icon={<MousePointer2 className="w-8 h-8" />}
             title="Selecteren"
-            text="Beweeg over elementen gedurende 3 seconden voor interactie."
+            text="Houd je hand 3 seconden boven een genre om deze te activeren."
             delay={0.4}
           />
         </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+        <div className="flex justify-center">
           <InteractiveButton 
             onClick={() => setStep('genre')}
-            className="px-12 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group"
+            className="px-16 py-6 glass rounded-full bg-brand/10 border-brand/20 hover:bg-brand/20 transition-all group overflow-hidden relative"
           >
-            <span className="text-base font-display font-medium uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">
-              Starten
+            <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
+              Genre Kiezen
             </span>
-          </InteractiveButton>
-
-          <InteractiveButton 
-            onClick={() => setStep('questions')}
-            className="px-12 py-4 glass rounded-full bg-brand/10 border-brand/20 hover:bg-brand/20 transition-all group"
-          >
-            <span className="text-base font-display font-medium uppercase tracking-widest text-brand group-hover:text-white transition-colors">
-              Ga naar de slide pagina's
-            </span>
+            <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </InteractiveButton>
         </div>
       </motion.div>

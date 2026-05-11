@@ -111,7 +111,7 @@ export const GestureSlider: React.FC<GestureSliderProps> = ({ value, onChange, o
 
       <div className="flex justify-center mt-8">
         <p className="text-white/20 text-[10px] font-mono tracking-widest uppercase">
-          {isDragging ? 'Knijp en Sleep' : 'Breng je duim en wijsvinger naar elkaar toe om de circel te pakken'}
+          {isDragging ? 'Knijp en Sleep' : 'Breng je duim en wijsvinger naar elkaar toe om de cirkel te pakken'}
         </p>
       </div>
     </div>

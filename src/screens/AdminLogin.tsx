@@ -127,7 +127,7 @@ export const AdminLogin: React.FC = () => {
 
           <div className="mt-14 flex justify-center border-t border-white/[0.04] pt-10">
             <InteractiveButton 
-              onClick={() => window.location.href = '/'}
+              onClick={() => useStore.getState().setStep('landing')}
               className="px-8 py-3 text-white/10 hover:text-white/40 text-[9px] font-mono uppercase tracking-[0.5em] transition-all rounded-full overflow-hidden border border-transparent hover:border-white/[0.05] font-black"
             >
               Verlaat Portaal
