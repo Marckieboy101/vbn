@@ -7,12 +7,6 @@ import { cn } from '../lib/utils';
 
 const GENRES = [
   { 
-    id: 'horror', 
-    label: 'Horror', 
-    color: 'from-red-950/80', 
-    image: 'https://images.unsplash.com/photo-1505634467193-705779771379?auto=format&fit=crop&q=80&w=800' 
-  },
-  { 
     id: 'comedy', 
     label: 'Komedie', 
     color: 'from-amber-950/80', 
@@ -52,8 +46,7 @@ export const GenreSelectionScreen: React.FC = () => {
       <header className="mb-16 text-center">
         <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Sfeer</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-base">
-          Beweeg over de categorieën die passen bij je huidige stemming. 
-          De AI gebruikt deze informatie voor je aanbeveling.
+          Selecteer een genre dat je leuk vind
         </p>
       </header>
 
@@ -133,7 +126,7 @@ export const GenreSelectionScreen: React.FC = () => {
             selectedGenres.length > 0 ? "glass-red" : "opacity-20 cursor-not-allowed"
           )}
         >
-          <span className="text-base font-display font-medium uppercase tracking-[0.2em]">Volgend Protocol</span>
+          <span className="text-base font-display font-medium uppercase tracking-[0.2em]">Dit genre kiezen</span>
         </InteractiveButton>
       </div>
     </div>

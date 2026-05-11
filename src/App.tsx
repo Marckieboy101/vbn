@@ -15,6 +15,7 @@ import { LandingScreen } from './screens/LandingScreen';
 import { IntroductionScreen } from './screens/IntroductionScreen';
 import { GenreSelectionScreen } from './screens/GenreSelectionScreen';
 import { QuestionFlowScreen } from './screens/QuestionFlowScreen';
+import { CommunityScreen } from './screens/CommunityScreen';
 import { ThankYouScreen } from './screens/ThankYouScreen';
 import { AdminLogin } from './screens/AdminLogin';
 import { AdminDashboard } from './screens/AdminDashboard';
@@ -57,10 +58,7 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
           </div>
           <h2 className="text-4xl font-display font-bold uppercase mb-4">Signaal <span className="text-brand">Geblokkeerd</span></h2>
           <p className="text-white/60 mb-10 leading-relaxed">
-            Om het VanBeresteyn AI protocol te ervaren, moet je cameratoegang inschakelen. 
-            {error === 'NotAllowedError' 
-              ? " Toegang werd geweigerd. Werk je browserinstellingen bij en ververs de pagina." 
-              : ` Er is een fout opgetreden: ${error}. Details: ${error}`}
+            {error}
           </p>
           <div className="flex flex-col gap-4">
             <button 
@@ -85,6 +83,7 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
     case 'intro': return <IntroductionScreen />;
     case 'genre': return <GenreSelectionScreen />;
     case 'questions': return <QuestionFlowScreen />;
+    case 'social': return <CommunityScreen />;
     case 'thankyou': return <ThankYouScreen />;
     // @ts-ignore
     case 'admin_login': return <AdminLogin />;

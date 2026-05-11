@@ -64,8 +64,7 @@ export const ThankYouScreen: React.FC = () => {
           transition={{ delay: 0.4 }}
           className="text-xl text-white/60 mb-12 leading-relaxed"
         >
-          We waarderen je deelname aan het VanBeresteyn interactieprotocol. 
-          Je inzichten zijn succesvol gesynchroniseerd met ons culturele collectief.
+          Laat ons je mening horen!
         </motion.p>
 
         <motion.div 

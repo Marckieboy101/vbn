@@ -39,11 +39,11 @@ export const IntroductionScreen: React.FC = () => {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           <InstructionCard 
             icon={<Move className="w-8 h-8" />}
             title="Navigeren"
-            text="Beweeg je wijsvinger om de cursor te besturen."
+            text="Beweeg je hand om de experience te besturen."
             delay={0.2}
           />
           <InstructionCard 
@@ -51,18 +51,6 @@ export const IntroductionScreen: React.FC = () => {
             title="Selecteren"
             text="Beweeg over elementen gedurende 3 seconden voor interactie."
             delay={0.4}
-          />
-          <InstructionCard 
-            icon={<Hand className="w-8 h-8" />}
-            title="Knijpen"
-            text="Knijp duim en wijsvinger samen om schuifregelaars te slepen."
-            delay={0.6}
-          />
-          <InstructionCard 
-            icon={<ThumbsUp className="w-8 h-8" />}
-            title="Bevestigen"
-            text="Een duim omhoog bevestigt je uiteindelijke keuze."
-            delay={0.8}
           />
         </div>
 
@@ -72,7 +60,7 @@ export const IntroductionScreen: React.FC = () => {
             className="px-12 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all"
           >
             <span className="text-base font-display font-medium uppercase tracking-widest">
-              Kalibreren & Doorgaan
+              Starten
             </span>
           </InteractiveButton>
         </div>

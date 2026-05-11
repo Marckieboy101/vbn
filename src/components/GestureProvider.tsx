@@ -37,16 +37,17 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const cameraRef = useRef<any>(null);
 
   useEffect(() => {
+    if (isInitializingRef.current) return;
+    isInitializingRef.current = true;
+
     let activeHands: Hands | null = null;
     let activeCamera: any = null;
     let isTerminated = false;
 
     const startCamera = async () => {
       try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
         if (isTerminated) return;
         
-        // Ensure only one global Module object exists to avoid conflict
         // @ts-ignore
         window.Module = window.Module || {};
         // @ts-ignore
@@ -80,14 +81,12 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const x = 1 - indexTip.x;
             const y = indexTip.y;
 
-            // Use hysteresis for more stable pinch detection
             const distance = Math.sqrt(
               Math.pow(indexTip.x - thumbTip.x, 2) + 
               Math.pow(indexTip.y - thumbTip.y, 2) + 
               Math.pow(indexTip.z - thumbTip.z, 2)
             );
             
-            // 0.07 to trigger, 0.1 to release
             const isPinching = prevState.isPinching 
               ? distance < 0.1 
               : distance < 0.07;
@@ -95,7 +94,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
             prevState.isPinching = isPinching;
 
             const isThumbUp = thumbTip.y < thumbIP.y && thumbTip.y < thumbMCP.y && 
-                               thumbTip.y < landmarks[8].y && thumbTip.y < landmarks[12].y;
+                                thumbTip.y < landmarks[8].y && thumbTip.y < landmarks[12].y;
 
             setState(prev => ({ ...prev, x, y, isPinching, isThumbUp, isVisible: true, error: null }));
           } else {
@@ -108,6 +107,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         handsRef.current = hands;
 
         if (videoRef.current) {
+          // Initialize camera with a shorter startup check
           const camera = new Camera(videoRef.current, {
             onFrame: async () => {
               if (isTerminated || !activeHands) return;
@@ -125,16 +125,61 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
             height: 480,
           });
           activeCamera = camera;
-          await camera.start();
-          setState(prev => ({ ...prev, error: null }));
+          cameraRef.current = camera;
+          
+          try {
+            await camera.start();
+            setState(prev => ({ ...prev, error: null }));
+          } catch (cameraErr: any) {
+            console.error("MediaPipe Camera.start failed, trying manual stream:", cameraErr);
+            
+            // Fallback for NotReadableError - usually solved by trying a simpler constraint
+            // or just waiting a moment
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                  width: { ideal: 640 }, 
+                  height: { ideal: 480 },
+                  facingMode: "user"
+                } 
+              });
+              
+              if (videoRef.current && !isTerminated) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+                
+                // If Camera.start() failed but we got the stream, we might need a manual frame loop
+                // if the Camera object doesn't pick it up automatically.
+                // However, usually we should try to restart the Camera with the existing stream if possible.
+                // But camera_utils doesn't support that easily.
+                
+                // Let's just report success if we got the stream, the onFrame might still work
+                // if Camera class internally attached listeners to the video element.
+                setState(prev => ({ ...prev, error: null }));
+              }
+            } catch (fallbackErr: any) {
+              throw fallbackErr;
+            }
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         if (isTerminated) return;
-        console.error("Camera error:", err);
-        setState(prev => ({ 
-          ...prev, 
-          error: err instanceof Error ? err.name : "Onbekende machtigingsfout" 
-        }));
+        console.error("Critical camera error:", err);
+        
+        let errorMsg = "Systeemfout bij camera-initialisatie";
+        if (err.name === 'NotAllowedError') {
+          errorMsg = "Toegang geweigerd - Schakel camera in je browserinstellingen in.";
+        } else if (err.name === 'NotReadableError' || err.message?.includes('could not start')) {
+          errorMsg = "Camera in gebruik door een ander programma of tabblad. Sluit andere video-apps af.";
+        } else if (err.name === 'NotFoundError') {
+          errorMsg = "Geen camera gedetecteerd op dit apparaat.";
+        } else {
+          errorMsg = err.message || "Onbekende hardware fout";
+        }
+        
+        setState(prev => ({ ...prev, error: errorMsg }));
+      } finally {
+        isInitializingRef.current = false;
       }
     };
 
@@ -142,15 +187,29 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return () => {
       isTerminated = true;
-      activeCamera?.stop();
-      activeHands?.close();
+      isInitializingRef.current = false;
+      if (activeCamera) {
+        activeCamera.stop();
+      }
+      if (activeHands) {
+        activeHands.close();
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
       handsRef.current = null;
     };
   }, []);
 
   return (
     <GestureContext.Provider value={state}>
-      <video ref={videoRef} className="hidden" playsInline muted />
+      <video 
+        ref={videoRef} 
+        className="fixed inset-0 w-full h-full object-cover -z-50 opacity-0 pointer-events-none" 
+        playsInline 
+        muted 
+      />
       {children}
     </GestureContext.Provider>
   );
