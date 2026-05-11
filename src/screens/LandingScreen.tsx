@@ -88,10 +88,21 @@ export const LandingScreen: React.FC = () => {
         transition={{ duration: 0.8 }}
         className="max-w-4xl"
       >
-        <h1 className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none">
-          KOM <br />
-          <span className="text-brand text-glow-red">DICHTERBIJ</span> <h1>STAAN</h1>
-        </h1>
+        <motion.h1 
+          className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none"
+          animate={{ 
+            opacity: [0.85, 1, 0.85],
+            scale: [0.98, 1, 0.98]
+          }}
+          transition={{ 
+            duration: 5, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
+        >
+          VanBeresteyn <br />
+          <span className="text-brand text-glow-red">AI Experience</span>
+        </motion.h1>
 
 
         <div className="relative group">
