@@ -36,6 +36,12 @@ const GENRES = [
     color: 'from-pink-950/80', 
     image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
   },
+    { 
+    id: 'fantasy', 
+    label: 'Fantasie',
+    color: 'from-pink-950/80', 
+    image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
+  },
 ];
 
 export const GenreSelectionScreen: React.FC = () => {
@@ -44,7 +50,7 @@ export const GenreSelectionScreen: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col p-8 pt-20 max-w-[1400px] mx-auto justify-center">
       <header className="mb-16 text-center">
-        <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Sfeer</span></h2>
+        <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je favoriete <span className="text-brand">Genre</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-base">
           Selecteer een genre dat je leuk vind
         </p>
