@@ -16,7 +16,7 @@ export const LandingScreen: React.FC = () => {
     if (isVisible) {
       // If detected, increase progress over 1.5 seconds for a smooth transition
       interval = setInterval(() => {
-        setDetectionProgress(prev => Math.min(100, prev + 5));
+        setDetectionProgress(prev => Math.min(1000, prev + 5));
       }, 30);
     } else {
       // If detection lost, reset progress
@@ -93,23 +93,23 @@ export const LandingScreen: React.FC = () => {
         className="max-w-4xl"
       >
         <h1 className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none">
-          VanBeresteyn <br />
-          <span className="text-brand text-glow-red">AI Experience</span>
+          DOE JE <br />
+          <span className="text-brand text-glow-red">HAND</span> <h1> OMHOOG</h1>
         </h1>
 
-        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+        {/* <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
           Geef ons jouw mening en join de leukste community voor film liefhebbers
-        </p>
+        </p> */}
 
         <div className="relative group">
-          <InteractiveButton 
+          {/* <InteractiveButton 
             onClick={() => setStep('intro')}
             className={`px-10 py-5 glass-red rounded-full transition-all duration-700 ${isVisible ? 'scale-90 opacity-20' : 'hover:scale-105'}`}
           >
             <span className="text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors relative z-10 pointer-events-none">
               {isVisible ? 'Dectectie actief...' : 'Kom dichterbij of klik'}
             </span>
-          </InteractiveButton>
+          </InteractiveButton> */}
           
           <motion.div 
             className="mt-8 text-white/20 font-mono text-[10px] uppercase tracking-[0.4em] flex items-center justify-center gap-2"
