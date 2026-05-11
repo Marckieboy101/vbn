@@ -63,7 +63,7 @@ export const CommunityScreen: React.FC = () => {
                 repeat: Infinity, 
                 ease: "linear" 
               }}
-              className="absolute left-4 right-4 h-[2px] bg-brand/50 shadow-[0_0_15px_rgba(225,29,72,0.5)] z-20"
+              className="absolute left-4 right-4 h-[2px] bg-brand/50 shadow-[0_0_15px_rgba(255,80,80,0.5)] z-20"
             />
           </div>
           

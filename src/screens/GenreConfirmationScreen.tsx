@@ -55,9 +55,9 @@ export const GenreConfirmationScreen: React.FC = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-4xl md:text-6xl font-display font-bold uppercase tracking-tighter mb-4"
+          className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tighter mb-4"
         >
-          Fantastische <span className="text-brand">Keuze</span>
+          Bedankt voor het kiezen van een <span className="text-brand">genre</span>
         </motion.h2>
 
         <motion.div
@@ -88,7 +88,7 @@ export const GenreConfirmationScreen: React.FC = () => {
             initial={{ width: 0 }}
             animate={{ width: "100%" }}
             transition={{ duration: 3, ease: "linear" }}
-            className="h-full bg-brand shadow-[0_0_10px_#e11d48]"
+            className="h-full bg-brand shadow-[0_0_10px_#FF5050]"
           />
         </div>
       </motion.div>

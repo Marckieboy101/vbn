@@ -104,8 +104,8 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
       animate={{ 
         scale: (isHovered || isMouseHovered) ? 1.05 : 1,
         boxShadow: (isHovered || isMouseHovered)
-          ? "0 0 40px rgba(225,29,72,0.3)" 
-          : "0 0 0px rgba(225,29,72,0)"
+          ? "0 0 40px rgba(255,80,80,0.3)" 
+          : "0 0 0px rgba(255,80,80,0)"
       }}
       transition={{ 
         type: "spring", 
@@ -145,7 +145,7 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
       {(isHovered || isMouseHovered) && progress > 0 && (
         <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/10 z-20">
           <motion.div 
-            className="h-full bg-brand shadow-[0_0_15px_rgba(225,29,72,1)]"
+            className="h-full bg-brand shadow-[0_0_15px_rgba(255,80,80,1)]"
             style={{ width: `${progress}%` }}
           />
         </div>

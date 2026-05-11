@@ -14,7 +14,7 @@ import {
 import { cn } from '../lib/utils';
 import { InteractiveButton } from '../components/InteractiveButton';
 
-const COLORS = ['#e11d48', '#fb7185', '#be123c', '#9f1239', '#e11d48', '#4c0519'];
+const COLORS = ['#FF5050', '#ff7676', '#E63E3E', '#CC2C2C', '#FF5050', '#661021'];
 
 export const AdminDashboard: React.FC = () => {
   const setAdmin = useStore((state) => state.setAdmin);
@@ -78,7 +78,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-transparent via-white/[0.08] to-transparent" />
         
         <div className="flex items-center gap-4 mb-14">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand via-brand to-[#831843] rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(225,29,72,0.3)] ring-1 ring-white/10 group cursor-pointer">
+          <div className="w-12 h-12 bg-gradient-to-br from-brand via-brand to-[#831843] rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(255,80,80,0.3)] ring-1 ring-white/10 group cursor-pointer">
             <LayoutDashboard className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex flex-col">
@@ -242,10 +242,10 @@ export const AdminDashboard: React.FC = () => {
                             fontSize: '11px',
                             fontFamily: 'JetBrains Mono'
                           }}
-                          itemStyle={{ color: '#e11d48' }}
+                          itemStyle={{ color: '#FF5050' }}
                           cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                         />
-                        <Bar dataKey="value" fill="#e11d48" radius={[10, 10, 0, 0]} barSize={34} />
+                        <Bar dataKey="value" fill="#FF5050" radius={[10, 10, 0, 0]} barSize={34} />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartSection>
@@ -437,14 +437,14 @@ const NavButton: React.FC<{ active?: boolean, icon: React.ReactNode, label: stri
     className={cn(
       "w-full flex items-center gap-4 px-6 py-5 rounded-[1.5rem] transition-all duration-500 group relative overflow-hidden",
       active 
-        ? "bg-brand/10 text-brand ring-1 ring-brand/30 shadow-[0_10px_40px_rgba(225,29,72,0.2)]" 
+        ? "bg-brand/10 text-brand ring-1 ring-brand/30 shadow-[0_10px_40px_rgba(255,80,80,0.2)]" 
         : "text-white/20 hover:bg-white/[0.03] hover:text-white/60"
     )}
   >
     {active && (
       <motion.div 
         layoutId="activeNavIndicator" 
-        className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-7 bg-brand rounded-r-full shadow-[0_0_20px_rgba(225,29,72,0.8)]"
+        className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-7 bg-brand rounded-r-full shadow-[0_0_20px_rgba(255,80,80,0.8)]"
       />
     )}
     <div className={cn(

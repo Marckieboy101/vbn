@@ -6,7 +6,7 @@ import { useGesture } from '../components/GestureProvider';
 import { Sparkles, Scan, Loader2 } from 'lucide-react';
 
 export const LandingScreen: React.FC = () => {
-  const setStep = useStore((state) => state.setStep);
+  const { step, setStep } = useStore();
   const { isVisible } = useGesture();
   const [detectionProgress, setDetectionProgress] = useState(0);
 
@@ -14,12 +14,11 @@ export const LandingScreen: React.FC = () => {
     let interval: NodeJS.Timeout;
     
     if (isVisible) {
-      // If detected, increase progress over 1.5 seconds for a smooth transition
+      // If detected, increase progress over 0.6 seconds for a faster, more responsive feel
       interval = setInterval(() => {
-        setDetectionProgress(prev => Math.min(100, prev + 5));
+        setDetectionProgress(prev => Math.min(100, prev + 10));
       }, 30);
     } else {
-      // If detection lost, reset progress
       setDetectionProgress(0);
     }
 
@@ -27,10 +26,10 @@ export const LandingScreen: React.FC = () => {
   }, [isVisible]);
 
   useEffect(() => {
-    if (detectionProgress >= 100) {
+    if (detectionProgress >= 100 && step === 'landing') {
       setStep('intro');
     }
-  }, [detectionProgress, setStep]);
+  }, [detectionProgress, setStep, step]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative">
@@ -71,10 +70,7 @@ export const LandingScreen: React.FC = () => {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <Scan className="w-10 h-10 text-brand animate-pulse" />
-                  <span className="text-brand font-mono text-xs uppercase tracking-widest">
-                    Activeren...
-                  </span>
+                  <div className="w-4 h-4 bg-brand rounded-full animate-ping opacity-75" />
                 </div>
               </div>
             </div>

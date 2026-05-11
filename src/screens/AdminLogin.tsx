@@ -28,7 +28,7 @@ export const AdminLogin: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#020202] relative overflow-hidden font-sans selection:bg-brand/30">
       {/* Dynamic Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.02),transparent_70%)]" />
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,80,80,0.02),transparent_70%)]" />
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand/5 blur-[120px] rounded-full pointer-events-none opacity-40" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand/5 blur-[120px] rounded-full pointer-events-none opacity-40" />
 
@@ -119,7 +119,7 @@ export const AdminLogin: React.FC = () => {
                 handleLogin(fakeEvent);
               }}
               disabled={loading}
-              className="w-full py-6 bg-brand hover:brightness-110 text-white font-display font-bold uppercase tracking-[0.4em] rounded-[1.5rem] transition-all shadow-[0_15px_40px_rgba(225,29,72,0.25)] border border-white/5 active:scale-[0.98]"
+              className="w-full py-6 bg-brand hover:brightness-110 text-white font-display font-bold uppercase tracking-[0.4em] rounded-[1.5rem] transition-all shadow-[0_15px_40px_rgba(255,80,80,0.25)] border border-white/5 active:scale-[0.98]"
             >
               {loading ? 'Verifying...' : 'Establish Connection'}
             </InteractiveButton>

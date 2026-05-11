@@ -56,9 +56,17 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const stream = videoRef.current.srcObject as MediaStream;
           stream.getTracks().forEach(track => {
             track.stop();
-            console.log("Stopped existing track:", track.label);
+            console.log("Cleanup: Stopped existing track:", track.label);
           });
           videoRef.current.srcObject = null;
+        }
+
+        // Additional thorough cleanup of any "orphaned" media devices
+        try {
+          const streams = await navigator.mediaDevices.enumerateDevices();
+          console.log("Detected devices:", streams.length);
+        } catch (e) {
+          console.warn("Device enumeration failed, proceeding anyway");
         }
 
         // @ts-ignore

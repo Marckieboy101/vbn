@@ -44,7 +44,7 @@ export const ThankYouScreen: React.FC = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="w-24 h-24 bg-brand/10 rounded-3xl flex items-center justify-center mx-auto mb-10 border border-brand/20 shadow-[0_0_40px_rgba(225,29,72,0.1)]"
+          className="w-24 h-24 bg-brand/10 rounded-3xl flex items-center justify-center mx-auto mb-10 border border-brand/20 shadow-[0_0_40px_rgba(255,80,80,0.1)]"
         >
           <Heart className="w-10 h-10 text-brand" />
         </motion.div>

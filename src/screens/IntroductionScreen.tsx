@@ -31,12 +31,8 @@ export const IntroductionScreen: React.FC = () => {
       >
         <header className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tight mb-4">
-            Gebaarbediening <span className="text-brand">Protocol</span>
+            Gebaarbediening
           </h2>
-          <p className="text-white/40 max-w-xl mx-auto">
-            Gebruik je webcam om interactie te hebben met de ervaring. 
-            Zorg dat je hand duidelijk zichtbaar is.
-          </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -54,13 +50,22 @@ export const IntroductionScreen: React.FC = () => {
           />
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6">
           <InteractiveButton 
             onClick={() => setStep('genre')}
-            className="px-12 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all"
+            className="px-12 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group"
           >
-            <span className="text-base font-display font-medium uppercase tracking-widest">
+            <span className="text-base font-display font-medium uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">
               Starten
+            </span>
+          </InteractiveButton>
+
+          <InteractiveButton 
+            onClick={() => setStep('questions')}
+            className="px-12 py-4 glass rounded-full bg-brand/10 border-brand/20 hover:bg-brand/20 transition-all group"
+          >
+            <span className="text-base font-display font-medium uppercase tracking-widest text-brand group-hover:text-white transition-colors">
+              Ga naar de slide pagina's
             </span>
           </InteractiveButton>
         </div>

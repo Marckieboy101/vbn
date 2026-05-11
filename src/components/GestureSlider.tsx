@@ -90,7 +90,7 @@ export const GestureSlider: React.FC<GestureSliderProps> = ({ value, onChange, o
           animate={{ 
             left: `${value}%`,
             scale: isDragging ? 1.6 : 1,
-            boxShadow: isDragging ? "0 0 40px rgba(225,29,72,1)" : "0 0 10px rgba(225,29,72,0.5)"
+            boxShadow: isDragging ? "0 0 40px rgba(255,80,80,1)" : "0 0 10px rgba(255,80,80,0.5)"
           }}
           className="absolute top-1/2 -ml-6 -mt-6 w-12 h-12 rounded-full border-4 border-brand bg-black z-20 flex items-center justify-center cursor-none"
         >

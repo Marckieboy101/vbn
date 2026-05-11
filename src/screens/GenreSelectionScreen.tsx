@@ -59,7 +59,7 @@ export const GenreSelectionScreen: React.FC = () => {
               onClick={() => toggleGenre(genre.id)}
               className={cn(
                 "relative h-48 rounded-3xl border overflow-hidden bg-black group",
-                isSelected ? "border-brand shadow-[0_0_30px_rgba(225,29,72,0.2)]" : "border-white/10 glass hover:border-white/30"
+                isSelected ? "border-brand shadow-[0_0_30px_rgba(255,80,80,0.2)]" : "border-white/10 glass hover:border-white/30"
               )}
             >
               {isSelected && (

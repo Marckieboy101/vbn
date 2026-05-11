@@ -31,7 +31,7 @@ export const FuturisticCursor: React.FC = () => {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute inset-0 border-2 border-brand rounded-lg shadow-[0_0_15px_rgba(225,29,72,0.8)]" 
+        className="absolute inset-0 border-2 border-brand rounded-lg shadow-[0_0_15px_rgba(255,80,80,0.8)]" 
       />
       
       {/* Inner Dot */}

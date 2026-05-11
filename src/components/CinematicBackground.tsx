@@ -5,7 +5,7 @@ export const CinematicBackground: React.FC = () => {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden bg-black">
       {/* Gradient Mesh */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(225,29,72,0.15)_0%,rgba(0,0,0,1)_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,80,80,0.15)_0%,rgba(0,0,0,1)_70%)]" />
       
       {/* Moving Waves */}
       <svg className="absolute w-full h-full opacity-30" viewBox="0 0 1000 1000" preserveAspectRatio="none">
@@ -23,7 +23,7 @@ export const CinematicBackground: React.FC = () => {
         />
         <defs>
           <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#e11d48', stopOpacity: 0.2 }} />
+            <stop offset="0%" style={{ stopColor: '#FF5050', stopOpacity: 0.2 }} />
             <stop offset="100%" style={{ stopColor: '#000', stopOpacity: 0.8 }} />
           </linearGradient>
         </defs>
