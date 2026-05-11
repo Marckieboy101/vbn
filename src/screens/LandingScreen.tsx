@@ -43,29 +43,8 @@ export const LandingScreen: React.FC = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 pointer-events-none z-50 flex flex-col items-center justify-center"
           >
-            {/* Corner Scan Markers */}
-            <div className="absolute inset-20 border-2 border-brand/20 rounded-[4rem] flex flex-col items-center justify-center">
-              <motion.div 
-                className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-brand rounded-tl-3xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <motion.div 
-                className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-brand rounded-tr-3xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-              />
-              <motion.div 
-                className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-brand rounded-bl-3xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-              />
-              <motion.div 
-                className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-brand rounded-br-3xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
-              />
-
+            {/* Detection Feedback */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
               {/* Progress Ring */}
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
@@ -99,13 +78,6 @@ export const LandingScreen: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Sweep line */}
-            <motion.div 
-              className="absolute left-0 right-0 h-1 bg-brand/30 blur-sm shadow-[0_0_20px_rgba(225,29,72,0.5)]"
-              animate={{ top: ['0%', '100%', '0%'] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            />
           </motion.div>
         )}
       </AnimatePresence>
