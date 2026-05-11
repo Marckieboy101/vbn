@@ -89,13 +89,10 @@ export const LandingScreen: React.FC = () => {
         className="max-w-4xl"
       >
         <h1 className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none">
-          VanBeresteyn <br />
-          <span className="text-brand text-glow-red">AI Experience</span>
+          KOM <br />
+          <span className="text-brand text-glow-red">DICHTERBIJ</span> <h1>STAAN</h1>
         </h1>
 
-        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-          Geef ons jouw mening en join de leukste community voor film liefhebbers
-        </p>
 
         <div className="relative group">
           <InteractiveButton 
