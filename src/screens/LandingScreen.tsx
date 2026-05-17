@@ -7,23 +7,23 @@ import { Sparkles, Scan, Loader2 } from 'lucide-react';
 
 export const LandingScreen: React.FC = () => {
   const { step, setStep } = useStore();
-  const { isVisible } = useGesture();
+  const { isVisible, error, retry } = useGesture();
   const [detectionProgress, setDetectionProgress] = useState(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (isVisible) {
-      // If detected, increase progress over 0.6 seconds for a faster, more responsive feel
+    if (isVisible && !error) {
+      // If detected, increase progress over 3 seconds as requested
       interval = setInterval(() => {
-        setDetectionProgress(prev => Math.min(100, prev + 10));
+        setDetectionProgress(prev => Math.min(100, prev + 1));
       }, 30);
     } else {
       setDetectionProgress(0);
     }
 
     return () => clearInterval(interval);
-  }, [isVisible]);
+  }, [isVisible, error]);
 
   useEffect(() => {
     if (detectionProgress >= 100 && step === 'landing') {
@@ -35,7 +35,7 @@ export const LandingScreen: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative">
       {/* Immersive Detection Overlay */}
       <AnimatePresence>
-        {isVisible && (
+        {isVisible && !error && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -81,9 +81,9 @@ export const LandingScreen: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ 
-          opacity: isVisible ? 0.4 : 1, 
-          y: isVisible ? -20 : 0,
-          scale: isVisible ? 0.95 : 1
+          opacity: isVisible && !error ? 0.4 : 1, 
+          y: isVisible && !error ? -20 : 0,
+          scale: isVisible && !error ? 0.95 : 1
         }}
         transition={{ duration: 0.8 }}
         className="max-w-4xl"
@@ -111,21 +111,42 @@ export const LandingScreen: React.FC = () => {
         <div className="relative group">
           <InteractiveButton 
             onClick={() => setStep('intro')}
-            className={`px-10 py-5 glass-red rounded-full transition-all duration-700 ${isVisible ? 'scale-90 opacity-20' : 'hover:scale-105'}`}
+            className={`px-10 py-5 glass-red rounded-full transition-all duration-700 ${isVisible && !error ? 'scale-90 opacity-20' : 'hover:scale-105 shadow-[0_0_30px_rgba(255,80,80,0.2)]'}`}
           >
             <span className="text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors relative z-10 pointer-events-none">
-              {isVisible ? 'Dectectie actief...' : 'Kom dichterbij of klik'}
+              {isVisible && !error ? 'Dectectie actief...' : 'Kom dichterbij of klik'}
             </span>
           </InteractiveButton>
           
-          <motion.div 
-            className="mt-8 text-white/20 font-mono text-[10px] uppercase tracking-[0.4em] flex items-center justify-center gap-2"
-            animate={{ opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Loader2 className="w-3 h-3 animate-spin" /> 
-            Wachten op interactie
-          </motion.div>
+          {error ? (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 p-6 glass rounded-2xl border-red-500/30 max-w-md mx-auto"
+            >
+              <p className="text-red-400 font-mono text-xs uppercase tracking-widest leading-relaxed mb-4">
+                {error}
+              </p>
+              <button 
+                onClick={retry}
+                className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-white/10 transition-colors"
+              >
+                Opnieuw Proberen
+              </button>
+              <p className="mt-4 text-white/30 text-[10px] uppercase tracking-widest">
+                Of klik op de knop om handmatig verder te gaan
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div 
+              className="mt-8 text-white/20 font-mono text-[10px] uppercase tracking-[0.4em] flex items-center justify-center gap-2"
+              animate={{ opacity: [0.2, 0.5, 0.2] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Loader2 className="w-3 h-3 animate-spin" /> 
+              Wachten op interactie
+            </motion.div>
+          )}
         </div>
       </motion.div>
     </div>

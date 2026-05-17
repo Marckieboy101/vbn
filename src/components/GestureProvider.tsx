@@ -9,6 +9,7 @@ interface GestureState {
   isThumbUp: boolean;
   isVisible: boolean;
   error: string | null;
+  retry: () => void;
 }
 
 const GestureContext = createContext<GestureState>({ 
@@ -17,13 +18,14 @@ const GestureContext = createContext<GestureState>({
   isPinching: false, 
   isThumbUp: false, 
   isVisible: false,
-  error: null 
+  error: null,
+  retry: () => {}
 });
 
 export const useGesture = () => useContext(GestureContext);
 
 export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<GestureState>({ 
+  const [state, setState] = useState<Omit<GestureState, 'retry'>>({ 
     x: 0.5, 
     y: 0.5, 
     isPinching: false, 
@@ -31,6 +33,10 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isVisible: false,
     error: null 
   });
+  const [retryCount, setRetryCount] = useState(0);
+  
+  const retry = () => setRetryCount(prev => prev + 1);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const handsRef = useRef<Hands | null>(null);
   const isInitializingRef = useRef<boolean>(false);
@@ -39,6 +45,9 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (isInitializingRef.current) return;
     isInitializingRef.current = true;
+    
+    // Explicitly reset error and visibility on mount/retry
+    setState(prev => ({ ...prev, error: null, isVisible: false }));
 
     let activeHands: Hands | null = null;
     let activeCamera: any = null;
@@ -235,10 +244,10 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       handsRef.current = null;
     };
-  }, []);
+  }, [retryCount]);
 
   return (
-    <GestureContext.Provider value={state}>
+    <GestureContext.Provider value={{ ...state, retry }}>
       <video 
         ref={videoRef} 
         className="fixed inset-0 w-full h-full object-cover -z-50 opacity-0 pointer-events-none" 
