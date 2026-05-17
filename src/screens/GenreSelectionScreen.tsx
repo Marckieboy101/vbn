@@ -36,6 +36,14 @@ const GENRES = [
     color: 'from-pink-950/80', 
     image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
   },
+
+    { 
+    id: 'romance', 
+    label: 'Romantiek2', 
+    color: 'from-pink-950/80', 
+    image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
+  },
+  
 ];
 
 export const GenreSelectionScreen: React.FC = () => {
