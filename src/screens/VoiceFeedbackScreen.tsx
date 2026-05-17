@@ -96,8 +96,12 @@ export const VoiceFeedbackScreen: React.FC = () => {
           voice_feedback: transcription,
           voice_feedback_timestamp: Date.now()
         }, { merge: true });
-      } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
+      } catch (error: any) {
+        if (error.code === 'unavailable') {
+          console.warn('Firestore is unavailable. The feedback will be synced when the connection is restored.');
+        } else {
+          handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
+        }
       }
     }
   }, [sessionId, transcription]);

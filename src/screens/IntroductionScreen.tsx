@@ -60,7 +60,9 @@ export const IntroductionScreen: React.FC = () => {
           >
             <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
               Genre Kiezen
-            </span>          </InteractiveButton>
+            </span>
+            <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          </InteractiveButton>
         </div>
       </motion.div>
     </div>
