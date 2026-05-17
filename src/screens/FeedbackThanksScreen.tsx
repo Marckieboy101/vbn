@@ -49,7 +49,7 @@ export const FeedbackThanksScreen: React.FC = () => {
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl font-display font-bold uppercase mb-6 tracking-tight">
-          Bedankt voor <br /><span className="text-brand">jouw feedback</span>
+          Bedankt voor <span className="text-brand">jouw feedback</span>
         </h1>
 
         <p className="text-xl text-white/60 mb-16 max-w-xl mx-auto font-light leading-relaxed">
@@ -63,7 +63,7 @@ export const FeedbackThanksScreen: React.FC = () => {
           className="flex flex-col items-center gap-8"
         >
           <InteractiveButton 
-            onClick={() => setStep('social')}
+            onClick={() => setStep('voice_feedback')}
             className="px-16 py-6 glass-red rounded-full group overflow-hidden relative"
           >
             <div className="flex items-center gap-4 relative z-10">

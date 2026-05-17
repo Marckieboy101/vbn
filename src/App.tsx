@@ -18,6 +18,7 @@ import { GenreConfirmationScreen } from './screens/GenreConfirmationScreen';
 import { InstructionsScreen } from './screens/InstructionsScreen';
 import { QuestionFlowScreen } from './screens/QuestionFlowScreen';
 import { FeedbackThanksScreen } from './screens/FeedbackThanksScreen';
+import { VoiceFeedbackScreen } from './screens/VoiceFeedbackScreen';
 import { CommunityScreen } from './screens/CommunityScreen';
 import { ThankYouScreen } from './screens/ThankYouScreen';
 import { AdminLogin } from './screens/AdminLogin';
@@ -89,6 +90,7 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
     case 'instructions': return <InstructionsScreen />;
     case 'questions': return <QuestionFlowScreen />;
     case 'feedback_thanks': return <FeedbackThanksScreen />;
+    case 'voice_feedback': return <VoiceFeedbackScreen />;
     case 'social': return <CommunityScreen />;
     case 'thankyou': return <ThankYouScreen />;
     // @ts-ignore

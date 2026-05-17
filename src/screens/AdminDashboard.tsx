@@ -9,10 +9,12 @@ import {
 } from 'recharts';
 import { 
   Users, CheckCircle, Activity, TrendingUp, 
-  Search, Download, Trash2, LogOut, LayoutDashboard, Database, MessageSquare, User
+  Search, Download, Trash2, LogOut, LayoutDashboard, Database, MessageSquare, User, Eye
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { InteractiveButton } from '../components/InteractiveButton';
+import { handleFirestoreError, OperationType } from '../lib/firebase';
+import { deleteDoc, doc } from 'firebase/firestore';
 
 const COLORS = ['#FF5050', '#ff7676', '#E63E3E', '#CC2C2C', '#FF5050', '#661021'];
 
@@ -21,8 +23,11 @@ export const AdminDashboard: React.FC = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'interrupted'>('all');
   const [activeTab, setActiveTab] = useState<'analytics' | 'database' | 'logs'>('analytics');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [selectedSession, setSelectedSession] = useState<any | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -31,12 +36,25 @@ export const AdminDashboard: React.FC = () => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSessions(data);
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'sessions');
+      setLoading(false);
     });
     return () => {
       unsubscribe();
       clearInterval(timer);
     };
   }, []);
+
+  const handleDeleteSession = async (id: string) => {
+    if (!window.confirm('Weet je zeker dat je deze sessie wilt verwijderen?')) return;
+    
+    try {
+      await deleteDoc(doc(db, 'sessions', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `sessions/${id}`);
+    }
+  };
 
   // Stats logic
   const totalUsers = sessions.length;
@@ -66,10 +84,16 @@ export const AdminDashboard: React.FC = () => {
     value: Math.round(total / (sliderCounts[name] || 1))
   }));
 
-  const filteredSessions = sessions.filter(s => 
-    (s.sessionId?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (s.genres && s.genres.join(' ').toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredSessions = sessions.filter(s => {
+    const matchesSearch = (s.sessionId?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (s.genres && s.genres.join(' ').toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'completed' && s.completed) ||
+      (statusFilter === 'interrupted' && !s.completed);
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-[#020202] text-[#F9FAFB] flex font-sans overflow-hidden selection:bg-brand/30">
@@ -211,6 +235,37 @@ export const AdminDashboard: React.FC = () => {
           >
             {activeTab === 'analytics' && (
               <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard 
+                    icon={<Users />} 
+                    label="Totaal Sessies" 
+                    value={totalUsers} 
+                    trend="+12%" 
+                    description="Interacties in de laatste 24u" 
+                  />
+                  <StatCard 
+                    icon={<CheckCircle />} 
+                    label="Voltooid" 
+                    value={completedSessions} 
+                    trend={`${completionRate}%`} 
+                    description="Conversie naar voltooiing" 
+                  />
+                  <StatCard 
+                    icon={<Activity />} 
+                    label="Real-time Load" 
+                    value="Low" 
+                    trend="Stable" 
+                    description="Systeem performantie" 
+                  />
+                  <StatCard 
+                    icon={<TrendingUp />} 
+                    label="Core Sync" 
+                    value="99.9%" 
+                    trend="+0.1%" 
+                    description="Database synchronisatie" 
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <ChartSection title="Genre Calibratie" subtitle="Distributie van user interesses">
                     <ResponsiveContainer width="100%" height="100%">
@@ -302,15 +357,31 @@ export const AdminDashboard: React.FC = () => {
                     <h3 className="text-3xl font-display font-bold uppercase tracking-tight">Sessie <span className="text-brand">Registry</span></h3>
                     <p className="text-[10px] text-white/20 uppercase tracking-[0.4em] font-mono mt-2 font-bold">Audit Trail & Session Data</p>
                   </div>
-                  <div className="relative group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-brand transition-colors" />
-                    <input 
-                      type="text" 
-                      placeholder="Zoek id, genre of status..." 
-                      className="bg-white/[0.02] border border-white/10 rounded-2xl py-4 pl-14 pr-8 text-sm focus:outline-none focus:border-brand/40 focus:ring-4 focus:ring-brand/5 transition-all min-w-[400px] font-mono"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                  <div className="flex items-center gap-6">
+                    <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5">
+                      {(['all', 'completed', 'interrupted'] as const).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => setStatusFilter(status)}
+                          className={cn(
+                            "px-4 py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest transition-all",
+                            statusFilter === status ? "bg-white/10 text-white" : "text-white/20 hover:text-white/40"
+                          )}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="relative group">
+                      <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-brand transition-colors" />
+                      <input 
+                        type="text" 
+                        placeholder="Zoek id, genre..." 
+                        className="bg-white/[0.02] border border-white/10 rounded-2xl py-4 pl-14 pr-8 text-sm focus:outline-none focus:border-brand/40 focus:ring-4 focus:ring-brand/5 transition-all min-w-[300px] font-mono"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -366,9 +437,20 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-12 py-7 text-right">
-                             <InteractiveButton className="p-4 bg-white/[0.02] hover:bg-brand/10 rounded-2xl transition-all border border-white/5 inline-flex items-center justify-center group/btn">
-                                <Eye className="w-4 h-4 text-white/20 group-hover/btn:text-brand transition-colors" />
-                             </InteractiveButton>
+                             <div className="flex justify-end gap-2">
+                               <InteractiveButton 
+                                 onClick={() => setSelectedSession(session)}
+                                 className="p-4 bg-white/[0.02] hover:bg-brand/10 rounded-2xl transition-all border border-white/5 inline-flex items-center justify-center group/btn"
+                               >
+                                  <Eye className="w-4 h-4 text-white/20 group-hover/btn:text-brand transition-colors" />
+                               </InteractiveButton>
+                               <InteractiveButton 
+                                 onClick={() => { handleDeleteSession(session.id); }}
+                                 className="p-4 bg-white/[0.02] hover:bg-red-500/10 rounded-2xl transition-all border border-white/5 inline-flex items-center justify-center group/btn"
+                               >
+                                  <Trash2 className="w-4 h-4 text-white/20 group-hover/btn:text-red-500 transition-colors" />
+                               </InteractiveButton>
+                             </div>
                           </td>
                         </tr>
                       ))}
@@ -426,6 +508,80 @@ export const AdminDashboard: React.FC = () => {
             )}
           </motion.div>
         </div>
+
+        {/* Detail Modal */}
+        {selectedSession && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-12">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => setSelectedSession(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative w-full max-w-2xl bg-[#050505] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-brand to-transparent" />
+              
+              <div className="p-12">
+                <div className="flex justify-between items-start mb-12">
+                  <div>
+                    <h3 className="text-3xl font-display font-bold uppercase tracking-tight mb-2">Sessie <span className="text-brand">Details</span></h3>
+                    <p className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] font-bold">UID: {selectedSession.sessionId}</p>
+                  </div>
+                  <InteractiveButton 
+                    onClick={() => setSelectedSession(null)}
+                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white"
+                  >
+                    Sluiten
+                  </InteractiveButton>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Geselecteerde Genres</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSession.genres?.map((g: string) => (
+                        <span key={g} className="bg-brand/10 text-brand text-[10px] px-4 py-2 rounded-xl border border-brand/20 uppercase font-black tracking-widest">
+                          {g}
+                        </span>
+                      ))}
+                      {(!selectedSession.genres || selectedSession.genres.length === 0) && (
+                        <span className="text-white/10 italic">Geen genres geselecteerd</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Slider Antwoorden</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {Object.entries(selectedSession.answers || {}).map(([key, val]: [string, any]) => (
+                        <div key={key} className="bg-white/5 p-4 rounded-2xl flex justify-between items-center">
+                          <span className="text-[11px] font-mono text-white/40 uppercase">{key}</span>
+                          <span className="text-brand font-bold font-mono">{val}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-8 border-t border-white/5 flex justify-between items-center">
+                    <div className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
+                      Tijdstip: {new Date(selectedSession.timestamp).toLocaleString('nl-NL')}
+                    </div>
+                    <div className={cn(
+                      "px-4 py-1.5 rounded-full text-[9px] font-mono uppercase tracking-[0.2em] font-bold",
+                      selectedSession.completed ? "bg-emerald-500/10 text-emerald-500" : "bg-orange-500/10 text-orange-500"
+                    )}>
+                      {selectedSession.completed ? 'Voltooid' : 'Onderbroken'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -500,6 +656,4 @@ const ChartSection: React.FC<{ title: string, subtitle: string, children: React.
 );
 
 
-function Eye({...props}) {
-    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-}
+

@@ -1,6 +1,6 @@
 {
   "name": "VanBeresteyn AI Experience",
   "description": "A futuristic interactive cultural experience with hand gesture controls and data-driven insights.",
-  "requestFramePermissions": ["camera"],
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["Hand gesture interaction", "Cultural data collection", "Data analytics"]
 }
