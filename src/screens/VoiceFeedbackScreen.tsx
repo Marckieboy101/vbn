@@ -161,7 +161,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
               Wil je nog <br /><span className="text-brand">extra feedback</span> geven?
             </h1>
             <p className="text-xl text-white/40 mb-12 font-light leading-relaxed">
-              Je kunt je mening via spraak delen. Dit helpt ons de ervaring nog verder te optimaliseren. We luisteren graag!
+              Je kunt eenvoudig je mening delen via spraak. Spreek in de microfoon en vertel ons wat je van de ervaring vond. Jouw feedback helpt ons om te blijven verbeteren.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <InteractiveButton 
@@ -171,10 +171,10 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 <div className="relative z-10 flex items-center justify-center gap-3">
                   <Mic className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   <span className="text-brand group-hover:text-white transition-colors font-display font-bold uppercase tracking-widest">
-                    {recognitionError === 'Microfoon toegang geweigerd' ? 'Opnieuw proberen' : 'Ja, ik spreek in'}
+                    {recognitionError === 'Microfoon toegang geweigerd' ? 'Opnieuw proberen' : 'Feedback geven'}
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                {/* <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" /> */}
               </InteractiveButton>
               <InteractiveButton 
                 onClick={() => setStep('social')}
@@ -267,8 +267,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 onClick={stopRecording}
                 className="px-12 py-5 glass rounded-full hover:bg-white/10 transition-all font-display font-bold uppercase tracking-[0.2em] flex items-center gap-4 border-white/5 group"
               >
-                <CheckCircle2 className="w-6 h-6 text-emerald-500" /> 
-                <span>Feedback Afronden</span>
+                <CheckCircle2 className="w-6 h-6 text-red-500"  /> 
+                <span> Feedback Afronden</span>
               </InteractiveButton>
             </div>
           </motion.div>
@@ -298,11 +298,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-4 text-white/5 font-mono text-[9px] uppercase tracking-[0.6em] font-black">
-        <BrainCircuit className="w-4 h-4 opacity-50" />
-        <span>Audio AI Analyse Actief</span>
-      </div>
     </div>
   );
 };

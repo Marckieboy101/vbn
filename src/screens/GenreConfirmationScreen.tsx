@@ -10,7 +10,7 @@ export const GenreConfirmationScreen: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setStep('instructions');
-    }, 3000); // 3 seconds of glory
+    }, 5000); // 3 seconds of glory
 
     return () => clearTimeout(timer);
   }, [setStep]);
@@ -87,7 +87,7 @@ export const GenreConfirmationScreen: React.FC = () => {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "100%" }}
-            transition={{ duration: 3, ease: "linear" }}
+            transition={{ duration: 5, ease: "linear" }}
             className="h-full bg-brand shadow-[0_0_10px_#FF5050]"
           />
         </div>

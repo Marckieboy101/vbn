@@ -82,12 +82,12 @@ export const QuestionFlowScreen: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <InteractiveButton
+                {/* <InteractiveButton
                   onClick={prev}
                   className="p-2 rounded-full glass border-white/10"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </InteractiveButton>
+                </InteractiveButton> */}
               </motion.div>
             )}
           </AnimatePresence>
@@ -105,9 +105,9 @@ export const QuestionFlowScreen: React.FC = () => {
                   className="px-8 py-3 glass-red rounded-full flex items-center gap-4 group shadow-[0_0_40px_rgba(255,80,80,0.3)] hover:shadow-[0_0_60px_rgba(255,80,80,0.5)] transition-all duration-500"
                 >
                   <span className="text-base font-display font-bold uppercase tracking-[0.2em] text-brand group-hover:text-white">
-                    {currentIdx === QUESTIONS.length - 1 ? 'Voltooien' : 'Doorgaan'}
+                    {currentIdx === QUESTIONS.length - 1 ? 'Voltooien' : 'Volgende'}
                   </span>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  {/* <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> */}
                 </InteractiveButton>
               </motion.div>
             )}

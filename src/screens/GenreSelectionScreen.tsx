@@ -34,7 +34,13 @@ const GENRES = [
     id: 'romance', 
     label: 'Romantiek', 
     color: 'from-pink-950/80', 
-    image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
+    image: 'https://unsplash.com/photos/couple-sitting-on-the-field-facing-the-city-EdULZpOKsUE' 
+  },
+  {
+      id: 'horror', 
+    label: 'Horror', 
+    color: 'from-pink-950/80', 
+    image: 'https://unsplash.com/photos/woman-in-blue-and-white-dress-holding-red-balloon-PbspBt8DOyY' 
   },
 ];
 
@@ -44,7 +50,7 @@ export const GenreSelectionScreen: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col p-8 pt-20 max-w-[1400px] mx-auto justify-center">
       <header className="mb-16 text-center">
-        <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Sfeer</span></h2>
+        <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Genre</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-base">
           Selecteer een genre dat je leuk vindt
         </p>
@@ -128,15 +134,19 @@ export const GenreSelectionScreen: React.FC = () => {
         </InteractiveButton>
 
         <InteractiveButton
-          disabled={selectedGenres.length === 0}
-          onClick={() => setStep('genre_confirmed')}
-          className={cn(
-            "px-12 py-4 rounded-full transition-all duration-500",
-            selectedGenres.length > 0 ? "glass-red" : "opacity-20 cursor-not-allowed"
-          )}
-        >
-          <span className="text-base font-display font-medium uppercase tracking-[0.2em]">Dit genre kiezen</span>
-        </InteractiveButton>
+  disabled={selectedGenres.length === 0}
+  onClick={() => setStep('genre_confirmed')}
+  className={cn(
+    "group px-12 py-4 rounded-full transition-all duration-500",
+    selectedGenres.length > 0
+      ? "glass-red"
+      : "opacity-20 cursor-not-allowed"
+  )}
+>
+  <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
+    Dit genre kiezen
+  </span>
+</InteractiveButton>
       </div>
     </div>
   );

@@ -48,7 +48,7 @@ export const IntroductionScreen: React.FC = () => {
           <InstructionCard 
             icon={<MousePointer2 className="w-8 h-8" />}
             title="Selecteren"
-            text="Houd je hand 3 seconden boven een genre om deze te activeren."
+            text="Houd je hand 3 seconden boven een genre om deze te kiezen."
             delay={0.4}
           />
         </div>
@@ -61,7 +61,6 @@ export const IntroductionScreen: React.FC = () => {
             <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
               Genre Kiezen
             </span>
-            <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </InteractiveButton>
         </div>
       </motion.div>

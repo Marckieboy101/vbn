@@ -89,7 +89,7 @@ export const LandingScreen: React.FC = () => {
         className="max-w-4xl"
       >
         <motion.h1 
-          className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none"
+          className="text-7xl md:text-6xl font-display font-bold mb-6 tracking-tighter uppercase leading-none"
           animate={{ 
             opacity: [0.85, 1, 0.85],
             scale: [0.98, 1, 0.98]
@@ -100,54 +100,9 @@ export const LandingScreen: React.FC = () => {
             ease: "easeInOut" 
           }}
         >
-          VanBeresteyn <br />
-          <span className="text-brand text-glow-red">AI Experience</span>
+          DOE JE HAND VOOR<br />
+          <span className="text-brand text-glow-red">3 SECONDEN NAAR VOREN</span>
         </motion.h1>
-
-        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-          Geef ons jouw mening en join de leukste community voor film liefhebbers
-        </p>
-
-        <div className="relative group">
-          <InteractiveButton 
-            onClick={() => setStep('intro')}
-            className={`px-10 py-5 glass-red rounded-full transition-all duration-700 ${isVisible && !error ? 'scale-90 opacity-20' : 'hover:scale-105 shadow-[0_0_30px_rgba(255,80,80,0.2)]'}`}
-          >
-            <span className="text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors relative z-10 pointer-events-none">
-              {isVisible && !error ? 'Dectectie actief...' : 'Kom dichterbij of klik'}
-            </span>
-          </InteractiveButton>
-          
-          {error ? (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-8 p-6 glass rounded-2xl border-red-500/30 max-w-md mx-auto"
-            >
-              <p className="text-red-400 font-mono text-xs uppercase tracking-widest leading-relaxed mb-4">
-                {error}
-              </p>
-              <button 
-                onClick={retry}
-                className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-white/10 transition-colors"
-              >
-                Opnieuw Proberen
-              </button>
-              <p className="mt-4 text-white/30 text-[10px] uppercase tracking-widest">
-                Of klik op de knop om handmatig verder te gaan
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="mt-8 text-white/20 font-mono text-[10px] uppercase tracking-[0.4em] flex items-center justify-center gap-2"
-              animate={{ opacity: [0.2, 0.5, 0.2] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Loader2 className="w-3 h-3 animate-spin" /> 
-              Wachten op interactie
-            </motion.div>
-          )}
-        </div>
       </motion.div>
     </div>
   );
