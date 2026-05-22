@@ -66,7 +66,7 @@ export const LandingScreen: React.FC = () => {
                     strokeDasharray={2 * Math.PI * 88}
                     strokeDashoffset={2 * Math.PI * 88 * (1 - detectionProgress / 100)}
                     className="text-brand"
-                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                    transition={{ duration: 5, ease: "linear" }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
@@ -85,7 +85,7 @@ export const LandingScreen: React.FC = () => {
           y: isVisible && !error ? -20 : 0,
           scale: isVisible && !error ? 0.95 : 1
         }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 4 }}
         className="max-w-4xl"
       >
         <motion.h1 
@@ -103,6 +103,31 @@ export const LandingScreen: React.FC = () => {
           DOE JE HAND VOOR<br />
           <span className="text-brand text-glow-red">3 SECONDEN NAAR VOREN</span>
         </motion.h1>
+<<<<<<< Updated upstream
+=======
+
+        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+          Geef ons jouw mening en join de leukste community voor film liefhebbers
+        </p>
+
+        <div className="relative group">
+          <InteractiveButton 
+            onClick={() => setStep('intro')}
+            className={`px-10 py-5 glass-red rounded-full transition-all duration-700 ${isVisible ? 'scale-90 opacity-20' : 'hover:scale-105'}`}
+          >
+            <span className="text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors relative z-10 pointer-events-none">
+              {isVisible ? 'Dectectie actief...' : 'Kom dichterbij of klik'}
+            </span>
+          </InteractiveButton>
+          
+          <motion.div 
+            className="mt-8 text-white/20 font-mono text-[10px] uppercase tracking-[0.4em] flex items-center justify-center gap-2"
+            animate={{ opacity: [0.2, 0.5, 0.2] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+          </motion.div>
+        </div>
+>>>>>>> Stashed changes
       </motion.div>
     </div>
   );

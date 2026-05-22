@@ -137,6 +137,7 @@ export const GenreSelectionScreen: React.FC = () => {
   disabled={selectedGenres.length === 0}
   onClick={() => setStep('genre_confirmed')}
   className={cn(
+<<<<<<< Updated upstream
     "group px-12 py-4 rounded-full transition-all duration-500",
     selectedGenres.length > 0
       ? "glass-red"
@@ -145,6 +146,14 @@ export const GenreSelectionScreen: React.FC = () => {
 >
   <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
     Dit genre kiezen
+=======
+    "px-12 py-4 rounded-full transition-all duration-500 group",
+    selectedGenres.length > 0 ? "glass-red" : "opacity-20 cursor-not-allowed"
+  )}
+>
+  <span className="text-base font-display font-medium uppercase tracking-[0.2em] text-white group-hover:text-red-500 transition-colors duration-300">
+    Dit Genre Kiezen
+>>>>>>> Stashed changes
   </span>
 </InteractiveButton>
       </div>
