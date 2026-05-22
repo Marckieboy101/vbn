@@ -53,7 +53,7 @@ export const FeedbackThanksScreen: React.FC = () => {
         </h1>
 
         <p className="text-xl text-white/60 mb-16 max-w-xl mx-auto font-light leading-relaxed">
-          Jouw antwoorden zijn succesvol opgeslagem, bedankt voor je mening!
+          Jouw antwoorden zijn succesvol geanalyseerd en opgeslagen in ons netwerk. We waarderen je bijdrage aan de culturele transitie.
         </p>
 
         <motion.div 
@@ -73,14 +73,6 @@ export const FeedbackThanksScreen: React.FC = () => {
               <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-500" />
             </div>
           </InteractiveButton>
-<<<<<<< Updated upstream
-=======
-
-          <div className="flex items-center gap-3 text-white/20 font-mono text-[9px] uppercase tracking-[0.5em] font-black">
-            <BrainCircuit className="w-4 h-4" />
-            <span>Analyse Voltooid</span>
-          </div>
->>>>>>> Stashed changes
         </motion.div>
       </motion.div>
     </div>
