@@ -10,11 +10,7 @@ export const GenreConfirmationScreen: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setStep('instructions');
-<<<<<<< Updated upstream
-    }, 5000); // 3 seconds of glory
-=======
     }, 5000); // 5 seconds of glory
->>>>>>> Stashed changes
 
     return () => clearTimeout(timer);
   }, [setStep]);
@@ -83,7 +79,7 @@ export const GenreConfirmationScreen: React.FC = () => {
           transition={{ delay: 0.8 }}
           className="text-white/40 text-lg font-light tracking-wide"
         >
-          We bereiden de vragen voor...
+          We bereiden de vragen voor op basis van jouw smaak...
         </motion.p>
         
         {/* Progress loader */}

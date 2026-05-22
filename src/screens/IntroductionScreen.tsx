@@ -54,15 +54,15 @@ export const IntroductionScreen: React.FC = () => {
         </div>
 
         <div className="flex justify-center">
-  <InteractiveButton 
-    onClick={() => setStep('genre')}
-    className="group px-16 py-6 glass rounded-full bg-brand/10 border-brand/20 hover:bg-brand/20 transition-all overflow-hidden relative"
-  >
-    <span className="text-base font-display font-medium uppercase tracking-[0.2em] text-white transition-colors duration-300 group-hover:text-red-500">
-      Genre Kiezen
-    </span>
-  </InteractiveButton>
-</div>
+          <InteractiveButton 
+            onClick={() => setStep('genre')}
+            className="px-16 py-6 glass rounded-full bg-brand/10 border-brand/20 hover:bg-brand/20 transition-all group overflow-hidden relative"
+          >
+            <span className="relative z-10 text-xl font-display font-bold uppercase tracking-widest text-brand group-hover:text-white transition-colors">
+              Genre Kiezen
+            </span>
+          </InteractiveButton>
+        </div>
       </motion.div>
     </div>
   );

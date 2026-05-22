@@ -66,7 +66,7 @@ export const LandingScreen: React.FC = () => {
                     strokeDasharray={2 * Math.PI * 88}
                     strokeDashoffset={2 * Math.PI * 88 * (1 - detectionProgress / 100)}
                     className="text-brand"
-                    transition={{ duration: 5, ease: "linear" }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
@@ -85,7 +85,7 @@ export const LandingScreen: React.FC = () => {
           y: isVisible && !error ? -20 : 0,
           scale: isVisible && !error ? 0.95 : 1
         }}
-        transition={{ duration: 4 }}
+        transition={{ duration: 0.8 }}
         className="max-w-4xl"
       >
         <motion.h1 
