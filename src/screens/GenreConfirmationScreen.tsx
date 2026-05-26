@@ -10,7 +10,7 @@ export const GenreConfirmationScreen: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setStep('instructions');
-    }, 5000); // 3 seconds of glory
+    }, 5000); // 5 seconds of glory
 
     return () => clearTimeout(timer);
   }, [setStep]);
