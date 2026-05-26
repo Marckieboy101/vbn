@@ -34,13 +34,13 @@ const GENRES = [
     id: 'romance', 
     label: 'Romantiek', 
     color: 'from-pink-950/80', 
-    image: 'https://unsplash.com/photos/couple-sitting-on-the-field-facing-the-city-EdULZpOKsUE' 
+    image: 'https://images.unsplash.com/photo-1525206809752-65312b959c88?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' 
   },
   {
       id: 'horror', 
     label: 'Horror', 
     color: 'from-pink-950/80', 
-    image: 'https://unsplash.com/photos/woman-in-blue-and-white-dress-holding-red-balloon-PbspBt8DOyY' 
+    image: 'https://images.unsplash.com/photo-1580843411760-ea295173bfd0?q=80&w=930&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' 
   },
 ];
 
@@ -52,7 +52,7 @@ export const GenreSelectionScreen: React.FC = () => {
       <header className="mb-16 text-center">
         <h2 className="text-4xl md:text-5xl font-display font-bold uppercase mb-4">Selecteer je <span className="text-brand">Genre</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-base">
-          Selecteer een genre dat je leuk vindt
+          Selecteer één genre dat je leuk vindt
         </p>
       </header>
 
