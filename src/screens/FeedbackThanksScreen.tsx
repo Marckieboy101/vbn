@@ -64,15 +64,21 @@ export const FeedbackThanksScreen: React.FC = () => {
         >
           <InteractiveButton 
             onClick={() => setStep('voice_feedback')}
-            className="px-8 py-4 glass-red rounded-full group overflow-hidden relative"
+            className="px-16 py-6 glass-red rounded-full group overflow-hidden relative"
           >
-            <div className="flex items-center gap-2 relative z-1">
+            <div className="flex items-center gap-4 relative z-10">
               <span className="text-xl font-display font-bold uppercase tracking-[0.2em] text-brand group-hover:text-white transition-colors">
                 Volgende Stap
               </span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-500" />
             </div>
+            <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </InteractiveButton>
+
+          <div className="flex items-center gap-3 text-white/20 font-mono text-[9px] uppercase tracking-[0.5em] font-black">
+            <BrainCircuit className="w-4 h-4" />
+            <span>DNA Analyse Voltooid</span>
+          </div>
         </motion.div>
       </motion.div>
     </div>

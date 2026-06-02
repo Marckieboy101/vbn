@@ -7,10 +7,10 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const QUESTIONS = [
-  { id: 'duration', text: "Ik hou van lange, epische films die je helemaal meenemen in een andere wereld.", min: "Nee", max: "Ja" },
-  { id: 'immersion', text: "Ik wil volledig ondergedompeld worden in een film.", min: "Nee", max: "Ja" },
-  { id: 'social', text: "Ik vind het leuk om mijn film ervaring te delen met vrienden.", min: "Nee", max: "Ja" },
-  { id: 'breaks', text: "Ik waardeer een pauze tijdens de film.", min: "Nee", max: "Ja" },
+  { id: 'duration', text: "Ik geniet van lange, epische films die een complexe wereld opbouwen.", min: "Kort", max: "Episch" },
+  { id: 'immersion', text: "Ik wil volledig ondergedompeld worden in een virtuele omgeving.", min: "Passief", max: "Meeslepend" },
+  { id: 'social', text: "Ik deel culturele ervaringen het liefst met een grote groep.", min: "Solo", max: "Sociaal" },
+  { id: 'breaks', text: "Ik waardeer af en toe een pauze voor reflectie tijdens digitale kunst.", min: "Continu", max: "Gedoseerd" },
 ];
 
 export const QuestionFlowScreen: React.FC = () => {
@@ -82,12 +82,12 @@ export const QuestionFlowScreen: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                {/* <InteractiveButton
+                <InteractiveButton
                   onClick={prev}
                   className="p-2 rounded-full glass border-white/10"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </InteractiveButton> */}
+                </InteractiveButton>
               </motion.div>
             )}
           </AnimatePresence>
@@ -105,9 +105,9 @@ export const QuestionFlowScreen: React.FC = () => {
                   className="px-8 py-3 glass-red rounded-full flex items-center gap-4 group shadow-[0_0_40px_rgba(255,80,80,0.3)] hover:shadow-[0_0_60px_rgba(255,80,80,0.5)] transition-all duration-500"
                 >
                   <span className="text-base font-display font-bold uppercase tracking-[0.2em] text-brand group-hover:text-white">
-                    {currentIdx === QUESTIONS.length - 1 ? 'Voltooien' : 'Volgende'}
+                    {currentIdx === QUESTIONS.length - 1 ? 'Voltooien' : 'Doorgaan'}
                   </span>
-                  {/* <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> */}
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </InteractiveButton>
               </motion.div>
             )}

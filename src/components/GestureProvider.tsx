@@ -10,6 +10,8 @@ interface GestureState {
   isVisible: boolean;
   error: string | null;
   retry: () => void;
+  isMouseFallback: boolean;
+  bypassError: () => void;
 }
 
 const GestureContext = createContext<GestureState>({ 
@@ -19,23 +21,34 @@ const GestureContext = createContext<GestureState>({
   isThumbUp: false, 
   isVisible: false,
   error: null,
-  retry: () => {}
+  retry: () => {},
+  isMouseFallback: false,
+  bypassError: () => {}
 });
 
 export const useGesture = () => useContext(GestureContext);
 
 export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<Omit<GestureState, 'retry'>>({ 
+  const [state, setState] = useState<Omit<GestureState, 'retry' | 'bypassError'>>({ 
     x: 0.5, 
     y: 0.5, 
     isPinching: false, 
     isThumbUp: false, 
     isVisible: false,
-    error: null 
+    error: null,
+    isMouseFallback: false
   });
   const [retryCount, setRetryCount] = useState(0);
   
   const retry = () => setRetryCount(prev => prev + 1);
+  const bypassError = () => {
+    setState(prev => ({
+      ...prev,
+      error: null,
+      isMouseFallback: true,
+      isVisible: true
+    }));
+  };
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const handsRef = useRef<Hands | null>(null);
@@ -221,7 +234,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
           errorMsg = err.message || "Onbekende hardware fout";
         }
         
-        setState(prev => ({ ...prev, error: errorMsg }));
+        setState(prev => ({ ...prev, error: errorMsg, isMouseFallback: true, isVisible: true }));
       } finally {
         isInitializingRef.current = false;
       }
@@ -246,8 +259,103 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, [retryCount]);
 
+  // Synchronize state with a ref to avoid stale closures in listeners
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+        setState(prev => ({
+          ...prev,
+          x: e.clientX / window.innerWidth,
+          y: e.clientY / window.innerHeight,
+          isVisible: true
+        }));
+      }
+    };
+
+    const handleMouseDown = () => {
+      if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+        setState(prev => ({
+          ...prev,
+          isPinching: true
+        }));
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+        setState(prev => ({
+          ...prev,
+          isPinching: false
+        }));
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+          setState(prev => ({
+            ...prev,
+            x: touch.clientX / window.innerWidth,
+            y: touch.clientY / window.innerHeight,
+            isVisible: true,
+            isPinching: true
+          }));
+        }
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+          setState(prev => ({
+            ...prev,
+            x: touch.clientX / window.innerWidth,
+            y: touch.clientY / window.innerHeight,
+            isVisible: true
+          }));
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (stateRef.current.isMouseFallback || !stateRef.current.isVisible) {
+        setState(prev => ({
+          ...prev,
+          isPinching: false
+        }));
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleMouseDown, { passive: true });
+    window.addEventListener('mouseup', handleMouseUp, { passive: true });
+    
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, []);
+
   return (
-    <GestureContext.Provider value={{ ...state, retry }}>
+    <GestureContext.Provider value={{ ...state, retry, bypassError }}>
       <video 
         ref={videoRef} 
         className="fixed inset-0 w-full h-full object-cover -z-50 opacity-0 pointer-events-none" 

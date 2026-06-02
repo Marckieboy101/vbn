@@ -45,4 +45,26 @@
   .animate-scanline {
     animation: scanline 8s linear infinite;
   }
+
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  .animate-scan {
+    animation: scan 4s linear infinite;
+  }
+}
+
+/* CRT Screen Effect Overlay */
+html.crt-filter-active::after {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 40%, rgba(0, 0, 0, 0.35) 45%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+  z-index: 99999;
+  background-size: 100% 4px, 8px 100%;
+  pointer-events: none;
+  opacity: 0.85;
 }

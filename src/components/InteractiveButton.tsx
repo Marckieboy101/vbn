@@ -100,6 +100,27 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
       ref={ref}
       onMouseEnter={() => setIsMouseHovered(true)}
       onMouseLeave={() => setIsMouseHovered(false)}
+      onTouchStart={(e) => {
+        if (!disabled) {
+          setIsMouseHovered(true);
+        }
+      }}
+      onTouchEnd={() => {
+        setIsMouseHovered(false);
+      }}
+      onTouchCancel={() => {
+        setIsMouseHovered(false);
+      }}
+      onClick={() => {
+        if (!disabled && onClick) {
+          const now = Date.now();
+          if (now - lastClickTime > 800) {
+            soundManager.play('CLICK', 0.6);
+            onClick();
+            setLastClickTime(now);
+          }
+        }
+      }}
       initial={false}
       animate={{ 
         scale: (isHovered || isMouseHovered) ? 1.05 : 1,
@@ -113,7 +134,7 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
         damping: 20 
       }}
       className={cn(
-        "relative overflow-hidden transition-all duration-300",
+        "relative overflow-hidden transition-all duration-300 cursor-pointer select-none touch-manipulation",
         className
       )}
     >

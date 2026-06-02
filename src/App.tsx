@@ -9,6 +9,7 @@ import { useStore } from './store';
 import { GestureProvider } from './components/GestureProvider';
 import { CinematicBackground } from './components/CinematicBackground';
 import { FuturisticCursor } from './components/FuturisticCursor';
+import { soundManager } from './lib/sound';
 
 // Screens
 import { LandingScreen } from './screens/LandingScreen';
@@ -20,12 +21,12 @@ import { QuestionFlowScreen } from './screens/QuestionFlowScreen';
 import { FeedbackThanksScreen } from './screens/FeedbackThanksScreen';
 import { VoiceFeedbackScreen } from './screens/VoiceFeedbackScreen';
 import { CommunityScreen } from './screens/CommunityScreen';
-import { ThankYouScreen } from './screens/ThankYouScreen';
 import { AdminLogin } from './screens/AdminLogin';
 import { AdminDashboard } from './screens/AdminDashboard';
 import { cn } from './lib/utils';
 import { useGesture } from './components/GestureProvider';
 import { Settings, CameraOff, ShieldAlert, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { VBWrappedScreen } from './screens/VBWrappedScreen';
 
 export default function App() {
   const { isAdmin, setStep } = useStore();
@@ -49,37 +50,6 @@ export default function App() {
 }
 
 function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean, error: string | null }) {
-  if (error && !isAdmin) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center relative z-[200]">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="glass p-12 rounded-[3.5rem] border-brand/30 max-w-xl shadow-[0_0_100px_rgba(255,80,80,0.1)]"
-        >
-          <div className="w-24 h-24 bg-brand/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-brand/20">
-            <CameraOff className="w-12 h-12 text-brand" />
-          </div>
-          <h2 className="text-4xl font-display font-bold uppercase mb-4">Signaal <span className="text-brand">Geblokkeerd</span></h2>
-          <p className="text-white/60 mb-10 leading-relaxed">
-            {error}
-          </p>
-          <div className="flex flex-col gap-4">
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-5 glass-red rounded-2xl font-display font-bold uppercase tracking-widest flex items-center justify-center gap-3"
-            >
-              <RotateCcw className="w-5 h-5" /> Reeks Verversen
-            </button>
-            <div className="flex items-center justify-center gap-2 text-white/20 font-mono text-[10px] uppercase tracking-widest mt-4">
-              <ShieldAlert className="w-3 h-3" /> Veilige omgeving vereist
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   if (isAdmin) return <AdminDashboard />;
   
   switch (step) {
@@ -92,7 +62,7 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
     case 'feedback_thanks': return <FeedbackThanksScreen />;
     case 'voice_feedback': return <VoiceFeedbackScreen />;
     case 'social': return <CommunityScreen />;
-    case 'thankyou': return <ThankYouScreen />;
+    case 'thankyou': return <VBWrappedScreen onClose={() => useStore.getState().reset()} />;
     // @ts-ignore
     case 'admin_login': return <AdminLogin />;
     default: return <LandingScreen />;
@@ -101,17 +71,20 @@ function StepRenderer({ step, isAdmin, error }: { step: string, isAdmin: boolean
 
 function AppInner() {
   const { step, isAdmin } = useStore();
-  const { error } = useGesture();
+  const { error, isMouseFallback } = useGesture();
 
   return (
-    <div className="relative min-h-screen font-sans selection:bg-brand/30 selection:text-white cursor-none">
+    <div className={cn(
+      "relative min-h-screen font-sans selection:bg-brand/30 selection:text-white transition-all duration-300",
+      (error || isMouseFallback) ? "cursor-default" : "cursor-none"
+    )}>
       <CinematicBackground />
-      {!error && <FuturisticCursor />}
+      {(!error || isMouseFallback) && <FuturisticCursor />}
 
       <main className="relative z-10 w-full">
         <AnimatePresence mode="wait">
           <motion.div
-            key={isAdmin ? 'admin' : (error ? 'error' : step)}
+            key={isAdmin ? 'admin' : step}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -124,7 +97,7 @@ function AppInner() {
       </main>
 
       {/* Secret Admin Entry */}
-      {!isAdmin && !error && step === 'landing' && (
+      {!isAdmin && step === 'landing' && (
         <button 
           onClick={() => useStore.getState().setStep('admin_login' as any)}
           className="fixed bottom-6 right-6 p-3 text-white/5 hover:text-white/20 transition-colors z-[100]"
@@ -135,7 +108,7 @@ function AppInner() {
       )}
 
       {/* Global Sound Toggle */}
-      {!isAdmin && !error && (
+      {!isAdmin && (
         <button 
           onClick={() => useStore.getState().toggleSound()}
           className="fixed top-8 right-8 z-[100] p-3 glass rounded-full border-white/5 hover:bg-white/10 transition-colors group"

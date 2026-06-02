@@ -32,7 +32,10 @@ export const LandingScreen: React.FC = () => {
   }, [detectionProgress, setStep, step]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative">
+    <div 
+      onClick={() => setStep('intro')}
+      className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative cursor-pointer select-none"
+    >
       {/* Immersive Detection Overlay */}
       <AnimatePresence>
         {isVisible && !error && (
@@ -48,13 +51,13 @@ export const LandingScreen: React.FC = () => {
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle
-                    cx="96"
-                    cy="96"
-                    r="88"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="transparent"
-                    className="text-white/5"
+                     cx="96"
+                     cy="96"
+                     r="88"
+                     stroke="currentColor"
+                     strokeWidth="4"
+                     fill="transparent"
+                     className="text-white/5"
                   />
                   <motion.circle
                     cx="96"
@@ -86,10 +89,10 @@ export const LandingScreen: React.FC = () => {
           scale: isVisible && !error ? 0.95 : 1
         }}
         transition={{ duration: 0.8 }}
-        className="max-w-4xl"
+        className="max-w-4xl pointer-events-none"
       >
         <motion.h1 
-          className="text-7xl md:text-6xl font-display font-bold mb-6 tracking-tighter uppercase leading-none"
+          className="text-6xl md:text-8xl font-display font-bold mb-6 tracking-tighter uppercase leading-none"
           animate={{ 
             opacity: [0.85, 1, 0.85],
             scale: [0.98, 1, 0.98]
@@ -100,9 +103,13 @@ export const LandingScreen: React.FC = () => {
             ease: "easeInOut" 
           }}
         >
-          DOE JE HAND VOOR<br />
-          <span className="text-brand text-glow-red">3 SECONDEN NAAR VOREN</span>
+          KOM <br />
+          <span className="text-brand text-glow-red">DICHTERBIJ</span>
         </motion.h1>
+
+        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+          Geef ons jouw mening en join de leukste community voor film liefhebbers
+        </p>
       </motion.div>
     </div>
   );

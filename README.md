@@ -1,7 +1,20 @@
-<b>Instructies</b>
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-Importeer en open de code in Visual Studio Code (of een vergelijkbaar programma).
+# Run and deploy your AI Studio app
 
-Maak vervolgens een nieuwe terminal aan en voer het commando `npm run dev` uit.
+This contains everything you need to run your app locally.
 
-Mocht dit niet werken, voer dan eerst het commando `npm install` uit. Zodra de installatie klaar is, voer je opnieuw `npm run dev` uit.
+View your app in AI Studio: https://ai.studio/apps/372c0274-92d7-483e-b45b-0bef2305489d
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
