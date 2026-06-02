@@ -104,12 +104,13 @@ export const LandingScreen: React.FC = () => {
           }}
         >
           KOM <br />
-          <span className="text-brand text-glow-red">DICHTERBIJ</span>
+          <span className="text-brand text-200 text-glow-red">DICHTERBIJ</span><br />
+          STAAN
         </motion.h1>
 
-        <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+        {/* <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
           Geef ons jouw mening en join de leukste community voor film liefhebbers
-        </p>
+        </p> */}
       </motion.div>
     </div>
   );

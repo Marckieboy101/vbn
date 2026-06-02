@@ -75,7 +75,7 @@ export const QuestionFlowScreen: React.FC = () => {
       {/* Navigation - Fixed at bottom */}
       <div className="fixed bottom-12 left-0 w-full flex justify-center items-center pointer-events-none z-50">
         <div className="flex items-center gap-4 pointer-events-auto">
-          <AnimatePresence>
+          {/* <AnimatePresence>
             {currentIdx > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -90,7 +90,7 @@ export const QuestionFlowScreen: React.FC = () => {
                 </InteractiveButton>
               </motion.div>
             )}
-          </AnimatePresence>
+          </AnimatePresence> */}
 
           <AnimatePresence>
             {showContinue && (
@@ -107,7 +107,6 @@ export const QuestionFlowScreen: React.FC = () => {
                   <span className="text-base font-display font-bold uppercase tracking-[0.2em] text-brand group-hover:text-white">
                     {currentIdx === QUESTIONS.length - 1 ? 'Voltooien' : 'Doorgaan'}
                   </span>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </InteractiveButton>
               </motion.div>
             )}
