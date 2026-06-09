@@ -5,9 +5,10 @@ import { CheckCircle2, ArrowRight, BrainCircuit } from 'lucide-react';
 import { InteractiveButton } from '../components/InteractiveButton';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
 export const FeedbackThanksScreen: React.FC = () => {
-  const { setStep, sessionId, selectedGenres, answers } = useStore();
+  const { setStep, sessionId, selectedGenres, answers, ageGroup } = useStore();
 
   useEffect(() => {
     // Save the interaction data as "completed"
@@ -17,10 +18,14 @@ export const FeedbackThanksScreen: React.FC = () => {
           sessionId,
           genres: selectedGenres,
           answers,
+          ageGroup: ageGroup || '',
           timestamp: Date.now(),
           completed: true,
           feedback_received: true
         }, { merge: true });
+        
+        // Trigger automatic Google Sheets sync in background
+        triggerAutomaticGoogleSheetsSync();
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
       }

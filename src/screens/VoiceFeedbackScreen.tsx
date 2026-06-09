@@ -23,6 +23,7 @@ import { cn } from '../lib/utils';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { moderateAndRefineSpeech, ModerationResult } from '../services/geminiService';
+import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
 const DEFAULT_PROFANITY_LIST = [
   // Dutch Swears
@@ -43,9 +44,21 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     if (!stream || isMuted) {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      // Reset DOM visual modifications when mic is idle or muted
+      const ring1 = document.getElementById('mic-pulse-ring-1');
+      const ring2 = document.getElementById('mic-pulse-ring-2');
+      const btn = document.getElementById('mic-pulse-button');
+      if (ring1) ring1.style.transform = 'scale(1)';
+      if (ring2) ring2.style.transform = 'scale(1)';
+      if (btn) {
+        btn.style.transform = 'scale(1)';
+        btn.style.boxShadow = '';
       }
       return;
     }
@@ -55,10 +68,15 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioCtx = new AudioContextClass();
         const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 64; // Smaller for cleaner display
+        analyser.fftSize = 64; // Cleaner frequency display for ambient spectrum
         
         const source = audioCtx.createMediaStreamSource(stream);
         source.connect(analyser);
+
+        if (!active) {
+          audioCtx.close();
+          return;
+        }
 
         audioContextRef.current = audioCtx;
         analyserRef.current = analyser;
@@ -68,9 +86,10 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
 
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
+        let phase = 0;
 
         const draw = () => {
-          if (!canvasRef.current || isMuted) return;
+          if (!active || !canvasRef.current || isMuted) return;
           const currentCanvas = canvasRef.current;
           const currentCtx = currentCanvas.getContext('2d');
           if (!currentCtx) return;
@@ -79,39 +98,90 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
           const height = currentCanvas.height;
 
           animationRef.current = requestAnimationFrame(draw);
+          
+          // Get frequency data
           analyser.getByteFrequencyData(dataArray);
+
+          // Calculate average intensity for high fidelity pulsing
+          let sum = 0;
+          let activeBuckets = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+            if (dataArray[i] > 10) activeBuckets++;
+          }
+          const average = sum / (activeBuckets || bufferLength);
+          let normVolume = average / 140; // Max amplitude normalization
+          if (normVolume > 1) normVolume = 1;
+
+          // Reactively update parent buttons using direct DOM selection for flawless 60fps performance without React-render lag
+          const pulseRing1 = document.getElementById('mic-pulse-ring-1');
+          const pulseRing2 = document.getElementById('mic-pulse-ring-2');
+          const micButton = document.getElementById('mic-pulse-button');
+
+          if (pulseRing1) {
+            pulseRing1.style.transform = `scale(${1 + normVolume * 0.75})`;
+            pulseRing1.style.opacity = `${0.3 + normVolume * 0.6}`;
+          }
+          if (pulseRing2) {
+            pulseRing2.style.transform = `scale(${1 + normVolume * 1.5})`;
+            pulseRing2.style.opacity = `${0.1 + normVolume * 0.4}`;
+          }
+          if (micButton) {
+            micButton.style.transform = `scale(${1 + normVolume * 0.12})`;
+            micButton.style.boxShadow = `0 0 ${20 + normVolume * 60}px rgba(244, 63, 94, ${0.15 + normVolume * 0.75})`;
+          }
 
           currentCtx.clearRect(0, 0, width, height);
 
-          const barWidth = (width / bufferLength) * 1.5;
-          let x = 0;
-
-          // Symmetrical drawing
+          // Render soft-glow responsive frequency spectrum bars in background
+          const barWidth = (width / bufferLength) * 1.4;
+          let barX = 0;
           for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * height * 0.7;
-
-            // Gradient based on volume
-            const grad = currentCtx.createLinearGradient(0, height, 0, height - barHeight);
-            grad.addColorStop(0, 'rgba(239, 68, 68, 0.1)');
-            grad.addColorStop(0.5, 'rgba(239, 68, 68, 0.6)');
-            grad.addColorStop(1, '#ff4d4d');
-
-            currentCtx.fillStyle = grad;
-            
-            const currentBarHeight = Math.max(3, barHeight);
+            const barHeight = (dataArray[i] / 255) * height * 0.5;
+            const currentBarHeight = Math.max(2, barHeight);
             const yPos = height / 2 - currentBarHeight / 2;
-            
-            currentCtx.beginPath();
-            // Fallback for older roundRect browsers
-            if (currentCtx.roundRect) {
-              currentCtx.roundRect(x, yPos, barWidth - 2, currentBarHeight, 3);
-            } else {
-              currentCtx.rect(x, yPos, barWidth - 2, currentBarHeight);
-            }
-            currentCtx.fill();
 
-            x += barWidth;
+            const barGrad = currentCtx.createLinearGradient(0, yPos, 0, yPos + currentBarHeight);
+            barGrad.addColorStop(0, 'rgba(244, 63, 94, 0.04)');
+            barGrad.addColorStop(0.5, `rgba(244, 63, 94, ${0.12 + normVolume * 0.28})`);
+            barGrad.addColorStop(1, 'rgba(244, 63, 94, 0.04)');
+
+            currentCtx.fillStyle = barGrad;
+            
+            if (currentCtx.roundRect) {
+              currentCtx.beginPath();
+              currentCtx.roundRect(barX, yPos, barWidth - 2, currentBarHeight, 2);
+              currentCtx.fill();
+            } else {
+              currentCtx.fillRect(barX, yPos, barWidth - 2, currentBarHeight);
+            }
+            barX += barWidth;
           }
+
+          // Render the beautifully-styled flowing continuous sine waveforms
+          phase += 0.06 + normVolume * 0.08;
+
+          const drawSineWave = (frequency: number, ampMultiplier: number, phaseOffset: number, color: string, lineWidth: number) => {
+            currentCtx.beginPath();
+            currentCtx.moveTo(0, height / 2);
+
+            for (let xPos = 0; xPos <= width; xPos += 2) {
+              const taper = Math.sin((xPos / width) * Math.PI);
+              const sinAngle = xPos * frequency + phaseOffset;
+              // Base line thickness + reaction to amplitude
+              const y = height / 2 + Math.sin(sinAngle) * (14 + normVolume * 28) * ampMultiplier * taper;
+              currentCtx.lineTo(xPos, y);
+            }
+
+            currentCtx.strokeStyle = color;
+            currentCtx.lineWidth = lineWidth;
+            currentCtx.stroke();
+          };
+
+          // Draw overlap glowing wave layers
+          drawSineWave(0.018, 0.9, phase, 'rgba(244, 63, 94, 0.95)', 2.5); // Main branding color line
+          drawSineWave(0.012, 0.6, phase * 1.35 + Math.PI / 4, 'rgba(249, 115, 22, 0.45)', 1.5); // Secondary orange trail
+          drawSineWave(0.026, 0.45, phase * 0.7 - Math.PI / 3, 'rgba(236, 72, 153, 0.35)', 1.0); // Tertiary highlight
         };
 
         draw();
@@ -123,6 +193,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
     initAudio();
 
     return () => {
+      active = false;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -138,14 +209,61 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
         ref={canvasRef} 
         width={320} 
         height={60} 
-        className="w-80 h-14 opacity-90 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.3)] transition-all"
+        className="w-80 h-14 opacity-95 filter drop-shadow-[0_0_12px_rgba(244,63,94,0.35)] transition-all"
       />
       <div className="flex items-center gap-2 text-white/20 font-mono text-[9px] uppercase tracking-widest font-black">
         <Volume2 className="w-3 h-3 text-brand animate-pulse" />
-        <span>Live Audio Spectrum</span>
+        <span>Live Audio Golfvorm & Spectrum</span>
       </div>
     </div>
   );
+};
+
+const LIVE_POSITIVE_WORDS = [
+  'leuk', 'geweldig', 'fijn', 'prachtig', 'fantastisch', 'goed', 'top', 'mooi', 
+  'heerlijk', 'super', 'lief', 'blije', 'blij', 'verbazingwekkend', 'gezellig',
+  'great', 'awesome', 'nice', 'enjoyed', 'excellent', 'love', 'happy', 'cool',
+  'amazing', 'wonderful', 'perfect', 'good', 'friendly', 'vriendelijk', 'bedankt',
+  'dank', 'dankje', 'dank u'
+];
+
+const renderHighlightedText = (text: string, positiveWords: string[] = []) => {
+  if (!text) return "";
+  const wordsToHighlight = positiveWords && positiveWords.length > 0 ? positiveWords : LIVE_POSITIVE_WORDS;
+
+  // Escape special regex chars
+  const escapedWords = wordsToHighlight
+    .map(word => word.trim())
+    .filter(Boolean)
+    .map(word => word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+
+  if (escapedWords.length === 0) return text;
+
+  // Sort by length descending to match longer phrases first
+  escapedWords.sort((a, b) => b.length - a.length);
+
+  try {
+    const regex = new RegExp(`\\b(${escapedWords.join('|')})\\b`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => {
+      // Every odd part is a matched positive-sentiment word or phrase
+      if (index % 2 !== 0) {
+        return (
+          <mark 
+            key={index} 
+            className="bg-emerald-500/15 text-emerald-300 font-semibold px-1 rounded shadow-sm border border-emerald-500/25 inline-block mx-0.5 animate-pulse"
+          >
+            {part}
+          </mark>
+        );
+      }
+      return part;
+    });
+  } catch (e) {
+    console.warn("Regex highlighting failed:", e);
+    return text;
+  }
 };
 
 export const VoiceFeedbackScreen: React.FC = () => {
@@ -154,10 +272,16 @@ export const VoiceFeedbackScreen: React.FC = () => {
   // App Phases
   const [phase, setPhase] = useState<'ask' | 'recording' | 'ai_review' | 'thanks'>('ask');
   
+  // Continuous transcription builder states
+  const [spokenHistory, setSpokenHistory] = useState('');
+  const [sessionFinalText, setSessionFinalText] = useState('');
+  const [sessionInterimText, setSessionInterimText] = useState('');
+
   // Real-time Text output states
   const [transcription, setTranscription] = useState('');
   const [rawTranscription, setRawTranscription] = useState('');
   const [interimOutput, setInterimOutput] = useState('');
+  const [moderatedInterim, setModeratedInterim] = useState('');
   const [timeLeft, setTimeLeft] = useState(30);
   
   // Error / State states
@@ -187,6 +311,34 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
   // Recognition ref
   const recognitionRef = useRef<any>(null);
+  const isManuallyStoppedRef = useRef<boolean>(false);
+
+  // Synchronized refs to completely bypass stale state closure bugs in async audio event handlers
+  const phaseRef = useRef(phase);
+  const isMutedRef = useRef(isMuted);
+  const activeLangCodeRef = useRef(activeLangCode);
+  const spokenHistoryRef = useRef(spokenHistory);
+  const sessionFinalTextRef = useRef(sessionFinalText);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  useEffect(() => {
+    activeLangCodeRef.current = activeLangCode;
+  }, [activeLangCode]);
+
+  useEffect(() => {
+    spokenHistoryRef.current = spokenHistory;
+  }, [spokenHistory]);
+
+  useEffect(() => {
+    sessionFinalTextRef.current = sessionFinalText;
+  }, [sessionFinalText]);
 
   // Moderation / Censoring calculation
   const runModerationFilter = useCallback((text: string, wordsList: string[], action: 'censor' | 'block' | 'warn') => {
@@ -220,8 +372,18 @@ export const VoiceFeedbackScreen: React.FC = () => {
       const { censored, matches } = runModerationFilter(rawTranscription, customBlockedWords, moderationAction);
       setTranscription(censored);
       setProfanityMatches(matches);
+    } else {
+      setTranscription('');
+      setProfanityMatches([]);
     }
-  }, [rawTranscription, customBlockedWords, moderationAction, runModerationFilter]);
+
+    if (interimOutput) {
+      const { censored } = runModerationFilter(interimOutput, customBlockedWords, moderationAction);
+      setModeratedInterim(censored);
+    } else {
+      setModeratedInterim('');
+    }
+  }, [rawTranscription, interimOutput, customBlockedWords, moderationAction, runModerationFilter]);
 
   // Handle stream initialization
   const acquireMicStream = async () => {
@@ -248,7 +410,9 @@ export const VoiceFeedbackScreen: React.FC = () => {
     setPhase('recording');
     setRecognitionError(null);
     setIsMuted(false);
-    setProfanityMatches([]);
+    isManuallyStoppedRef.current = false;
+    setSessionFinalText('');
+    setSessionInterimText('');
     setInterimOutput('');
     soundManager.play('SUCCESS', 0.4);
 
@@ -260,70 +424,108 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch (e) {}
-      }
+      const startSpeechEngine = () => {
+        // Stop if user muted, finished or navigated away
+        if (phaseRef.current !== 'recording' || isMutedRef.current || isManuallyStoppedRef.current) {
+          return;
+        }
 
-      const rec = new SpeechRecognition();
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.lang = activeLangCode;
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.onend = null;
+            recognitionRef.current.abort();
+          } catch (e) {}
+        }
 
-      rec.onresult = (event: any) => {
-        let finalTranscript = '';
-        let currentInterim = '';
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = activeLangCodeRef.current;
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            currentInterim += event.results[i][0].transcript;
+        rec.onresult = (event: any) => {
+          let sessionFinal = '';
+          let sessionInterim = '';
+
+          for (let i = 0; i < event.results.length; ++i) {
+            const text = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              sessionFinal += (sessionFinal ? ' ' : '') + text;
+            } else {
+              sessionInterim += (sessionInterim ? ' ' : '') + text;
+            }
           }
-        }
 
-        if (currentInterim) {
-          setInterimOutput(currentInterim);
-        }
+          setSessionFinalText(sessionFinal);
+          setSessionInterimText(sessionInterim);
+          setInterimOutput(sessionInterim);
 
-        if (finalTranscript) {
+          // Word-by-word ultra-low latency updates combining previous blocks with live session text
+          const currentFullRaw = [spokenHistoryRef.current, sessionFinal].filter(Boolean).join(' ');
+          setRawTranscription(currentFullRaw);
+        };
+
+        rec.onerror = (event: any) => {
+          console.error('Speech recognition error event:', event.error);
+          
+          if (event.error === 'not-allowed') {
+            setRecognitionError('Microfoon toegang geweigerd');
+            setPhase('ask');
+            releaseMicStream();
+          } else if (event.error === 'network') {
+            setRecognitionError('Netwerkfout: Controleer internet verbinding');
+          } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+            setRecognitionError(`Speech recognition error: ${event.error}`);
+          }
+        };
+
+        // Handle continuous recordings and natural pauses elegantly via automatic resume restarts
+        rec.onend = () => {
+          // Safe commit of the final text block of the ended session before launching next chunk
+          if (sessionFinalTextRef.current) {
+            setSpokenHistory(prev => {
+              const nextHistory = [prev, sessionFinalTextRef.current].filter(Boolean).join(' ');
+              return nextHistory;
+            });
+            setSessionFinalText('');
+          }
+          setSessionInterimText('');
           setInterimOutput('');
-          setRawTranscription(prev => {
-            const nextRaw = prev + (prev ? ' ' : '') + finalTranscript;
-            const { censored, matches } = runModerationFilter(nextRaw, customBlockedWords, moderationAction);
-            setTranscription(censored);
-            setProfanityMatches(matches);
-            return nextRaw;
-          });
+
+          // Automatically recreate a FRESH SpeechRecognition session immediately after a pause or browser timeout trigger
+          if (phaseRef.current === 'recording' && !isMutedRef.current && !isManuallyStoppedRef.current) {
+            setTimeout(() => {
+              startSpeechEngine();
+            }, 50);
+          }
+        };
+
+        recognitionRef.current = rec;
+        try {
+          rec.start();
+        } catch (err) {
+          console.error('Failed to start SpeechRecognition engine:', err);
         }
       };
 
-      rec.onerror = (event: any) => {
-        console.error('Speech recognition error event:', event.error);
-        
-        if (event.error === 'not-allowed') {
-          setRecognitionError('Microfoon toegang geweigerd');
-          setPhase('ask');
-          releaseMicStream();
-        } else if (event.error === 'network') {
-          setRecognitionError('Netwerkfout: Controleer internet verbinding');
-        } else if (event.error !== 'aborted') {
-          setRecognitionError(`Speech recognition error: ${event.error}`);
-        }
-      };
-
-      recognitionRef.current = rec;
-      try {
-        rec.start();
-      } catch (err) {
-        console.error('Failed to start SpeechRecognition engine:', err);
-      }
+      startSpeechEngine();
     } else {
       console.warn('Browser SpeechRecognition not natively supported.');
       setTranscription('Speech recognition wordt niet optimaal ondersteund in deze browser, maar we slaan je feedback wel op!');
     }
-  }, [activeLangCode, customBlockedWords, moderationAction, runModerationFilter]);
+  }, [activeLangCode, runModerationFilter]);
+
+  // Clean initialization reset for a fresh start or replay
+  const startFreshRecording = () => {
+    setSpokenHistory('');
+    setSessionFinalText('');
+    setSessionInterimText('');
+    setRawTranscription('');
+    setTranscription('');
+    setInterimOutput('');
+    setProfanityMatches([]);
+    setTimeLeft(30);
+    startRecording();
+  };
 
   // Pause or Mute logic
   const toggleMute = () => {
@@ -331,32 +533,34 @@ export const VoiceFeedbackScreen: React.FC = () => {
       // Unmute & Resume
       setIsMuted(false);
       soundManager.play('SUCCESS', 0.2);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch (e) {
-          // Recreate if aborted
-          startRecording();
-        }
-      } else {
-        startRecording();
-      }
+      isManuallyStoppedRef.current = false;
+      startRecording();
     } else {
       // Mute/Pause
       setIsMuted(true);
+      isManuallyStoppedRef.current = true;
       if (recognitionRef.current) {
         try {
+          recognitionRef.current.onend = null; // Detach to avoid restart loops
+          // Commit finalized session part before disconnecting
+          if (sessionFinalText) {
+            setSpokenHistory(prev => [prev, sessionFinalText].filter(Boolean).join(' '));
+            setSessionFinalText('');
+          }
           recognitionRef.current.stop();
         } catch (e) {}
       }
+      setSessionInterimText('');
       setInterimOutput('');
     }
   };
 
   // Submit and fire off Gemini AI moderation
   const triggerSubmit = async () => {
+    isManuallyStoppedRef.current = true;
     if (recognitionRef.current) {
       try {
+        recognitionRef.current.onend = null; // Detach to avoid restarts
         recognitionRef.current.stop();
       } catch (e) {}
     }
@@ -383,7 +587,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
         refinedText: transcription || rawTranscription,
         toxic: profanityMatches.length > 0,
         blockedWordsDetected: profanityMatches,
-        language: 'Nederlands'
+        language: 'Nederlands',
+        positiveSentimentWords: []
       });
     } finally {
       setAiPolishing(false);
@@ -411,6 +616,9 @@ export const VoiceFeedbackScreen: React.FC = () => {
         voice_feedback_moderation_toxic: aiResult?.toxic || profanityMatches.length > 0,
         voice_feedback_timestamp: Date.now()
       }, { merge: true });
+      
+      // Trigger background sync to Google Sheets
+      triggerAutomaticGoogleSheetsSync();
     } catch (error: any) {
       if (error.code === 'unavailable') {
         console.warn('Firestore is temporarily offline. Changes stored locally.');
@@ -518,7 +726,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center max-w-lg mx-auto">
               <InteractiveButton 
-                onClick={startRecording}
+                onClick={startFreshRecording}
                 className="px-10 py-5 glass-red rounded-full group overflow-hidden relative min-w-[240px] shadow-[0_0_20px_rgba(255,80,80,0.1)]"
               >
                 <div className="relative z-10 flex items-center justify-center gap-3">
@@ -615,19 +823,28 @@ export const VoiceFeedbackScreen: React.FC = () => {
             {/* Spektrum, Counter, Visualizers */}
             <div className="mb-8 relative flex flex-col items-center">
               <div className="relative inline-block mb-3">
-                <motion.div 
-                  animate={isMuted ? {} : { 
-                    scale: [1, 1.1, 1], 
-                    boxShadow: ["0 0 20px rgba(255,80,80,0.15)", "0 0 50px rgba(255,80,80,0.5)", "0 0 20px rgba(255,80,80,0.15)"] 
-                  }} 
-                  transition={{ repeat: Infinity, duration: 2 }}
+                {/* Concentric pulsing back-glowing rings for active listener feedback */}
+                {!isMuted && (
+                  <>
+                    <div
+                      id="mic-pulse-ring-1"
+                      className="absolute inset-0 rounded-full bg-brand/20 blur-md pointer-events-none transition-transform duration-75 ease-out"
+                    />
+                    <div
+                      id="mic-pulse-ring-2"
+                      className="absolute inset-0 rounded-full bg-brand/10 blur-xl pointer-events-none transition-all duration-75 ease-out"
+                    />
+                  </>
+                )}
+                <div 
+                  id="mic-pulse-button"
                   className={cn(
-                    "w-24 h-24 rounded-full flex items-center justify-center mx-auto transition-colors duration-500 relative z-10 shadow-xl",
+                    "w-24 h-24 rounded-full flex items-center justify-center mx-auto transition-all duration-75 ease-out relative z-10 shadow-xl",
                     isMuted ? "bg-white/5 border border-white/10" : "bg-brand"
                   )}
                 >
-                  {isMuted ? <MicOff className="text-white/30 w-10 h-10" /> : <Mic className="text-white w-10 h-10 animate-pulse" />}
-                </motion.div>
+                  {isMuted ? <MicOff className="text-white/30 w-10 h-10" /> : <Mic className="text-white w-10 h-10" />}
+                </div>
 
                 <div className="absolute -top-3 -right-3 text-brand font-mono font-bold text-lg bg-black/90 border border-brand/20 px-3.5 py-1.5 rounded-2xl shadow-2xl z-20 min-w-[50px] text-center">
                   {timeLeft}s
@@ -658,8 +875,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
               <div className="max-h-[260px] overflow-y-auto custom-scrollbar flex items-center justify-center py-6">
                 <p className="text-2xl md:text-3xl text-white font-light text-center leading-relaxed">
-                  {transcription || <span className="opacity-20 italic font-mono text-lg uppercase tracking-widest">Spreek je gedachten in...</span>}
-                  {interimOutput && <span className="opacity-40 italic"> {interimOutput}</span>}
+                  {transcription ? renderHighlightedText(transcription) : <span className="opacity-20 italic font-mono text-lg uppercase tracking-widest">Spreek je gedachten in...</span>}
+                  {moderatedInterim && <span className="opacity-40 italic"> {renderHighlightedText(moderatedInterim)}</span>}
                 </p>
               </div>
 
@@ -936,7 +1153,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                       Originele Opname
                     </span>
                     <div className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl min-h-[140px] text-white/50 text-sm leading-relaxed font-light italic">
-                      "{transcription || rawTranscription}"
+                      "{renderHighlightedText(transcription || rawTranscription, aiResult?.positiveSentimentWords)}"
                     </div>
                   </div>
 
@@ -946,7 +1163,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                       Gepolijste Feedback (Gemini AI)
                     </span>
                     <div className="bg-brand/5 border border-brand/20 p-6 rounded-2xl min-h-[140px] text-white text-sm leading-relaxed font-bold">
-                      "{aiResult?.refinedText}"
+                      "{renderHighlightedText(aiResult?.refinedText || "", aiResult?.positiveSentimentWords)}"
                     </div>
                   </div>
                 </div>

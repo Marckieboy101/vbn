@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 import { 
   X, 
   ArrowRight, 
@@ -54,7 +55,8 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
     sessionId,
     setStep,
     setAnswer,
-    toggleGenre
+    toggleGenre,
+    ageGroup
   } = useStore();
 
   useEffect(() => {
@@ -65,12 +67,16 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           sessionId,
           genres: selectedGenres,
           answers,
+          ageGroup: ageGroup || '',
           archetypeId: activeArchetype?.id,
           archetypeTitle: activeArchetype?.title,
           timestamp: Date.now(),
           completed: true,
           thanked: true
         }, { merge: true });
+        
+        // Trigger automatic Google Sheets sync in background
+        triggerAutomaticGoogleSheetsSync();
       } catch (error) {
         handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
       }
@@ -215,6 +221,267 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
     score += (answersCount / 4) * 45; // up to 45%
     if (hasVoice) score += 25;
     return Math.round(Math.min(100, score));
+  };
+
+  // Dynamic table data for the personalized Wrapped table
+  const wrappedTableData = [
+    {
+      id: 'genre',
+      label: 'Gekozen Sfeer-vibe',
+      category: 'Sfeer',
+      icon: <Compass className="w-4 h-4 text-emerald-400" />,
+      value: hasGenre ? `${genreInfo.emoji} ${genreInfo.label}` : 'Synthese niet gekalibreerd',
+      hasValue: hasGenre,
+      badgeText: hasGenre ? 'GEACTIVEERD' : 'VERGRENDELD',
+      badgeColor: hasGenre ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-white/35 border-white/5',
+      insight: (() => {
+        if (!hasGenre) return 'Kies een sfeer op de console om deze koppeling te leggen.';
+        switch (genreId) {
+          case 'comedy': return 'Je zoekt de lach, gein, en pure memes. Jouw sfeer is gecentreerd rondom humor en vrolijkheid.';
+          case 'sports': return 'Je houdt van actie, adrenaline en competitieve sporten of online toernooien.';
+          case 'thriller': return 'Je bent geboeid door onheilspellende mysteries, donkere hoeken en vlijmscherpe suspense.';
+          case 'adventure': return 'Grenzeloze verkenningen, reizen en epische context zijn jouw favoriete landschappen.';
+          case 'romance': return 'Emotionele verhaallijnen, milde tonen en warme interpersoonlijke verbindingen hebben jouw voorkeur.';
+          case 'scifi': return 'Diep gedompeld in futuristische dromen, cybernetics en speculatieve technologie-universums.';
+          default: return 'Je bent momenteel ingesteld op een neutraal cultuuras.';
+        }
+      })(),
+      isSlider: false,
+    },
+    {
+      id: 'age',
+      label: 'Leeftijdscategorie',
+      category: 'Doelgroep-ijking',
+      icon: <User className="w-4 h-4 text-brand" />,
+      value: ageGroup ? `${ageGroup} jaar` : 'Geen leeftijdsgroep opgegeven',
+      hasValue: !!ageGroup,
+      badgeText: ageGroup === '12-13' ? 'Young Creator' : ageGroup === '14-15' ? 'Trendsetter' : ageGroup === '16-18' ? 'Connoisseur' : 'VERGRENDELD',
+      badgeColor: ageGroup ? 'bg-brand/10 text-brand border-brand/20' : 'bg-white/5 text-white/35 border-white/5',
+      insight: (() => {
+        if (!ageGroup) return 'Kies je leeftijd in de eerste stappen om deze ijking te ontsluiten.';
+        switch (ageGroup) {
+          case '12-13': return 'Perfecte afstemming op creatieve, direct aansprekende en energieke filmconcepten.';
+          case '14-15': return 'Gekalibreerd op grensverleggende thema\'s met een fijne balans tussen adrenaline en herkenbaarheid.';
+          case '16-18': return 'Schijnt licht op diepere cinema, complexe karakters en verfijnde narratieve diepgang.';
+          default: return 'Gekoppeld aan een neutraal ijkprofiel.';
+        }
+      })(),
+      isSlider: false,
+    },
+    {
+      id: 'duration',
+      label: 'Content Duurlengte',
+      category: 'Tijdsbesteding',
+      icon: <Activity className="w-4 h-4 text-amber-400" />,
+      value: answers['duration'] ?? 50,
+      hasValue: hasAnswers,
+      badgeText: (answers['duration'] ?? 50) > 60 ? 'Episch Lang' : (answers['duration'] ?? 50) < 40 ? 'Snackable Kort' : 'Gebalanceerd',
+      badgeColor: (answers['duration'] ?? 50) > 60 ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : (answers['duration'] ?? 50) < 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+      insight: (() => {
+        const val = answers['duration'] ?? 50;
+        if (!hasAnswers) return 'Versleep de schuifregelaars om jouw tijdsfocus te meten.';
+        if (val > 60) return 'Je kiest resoluut voor lange bioscoopspeelfilms en epische overzichtelijke verhaallijnen.';
+        if (val < 40) return 'Jouw focus ligt op snackable, snelle media en flitsende verhaalloops zoals TikTok en shorts.';
+        return 'Je schommelt rond een harmonieuze balans tussen korte video\'s en langere producties.';
+      })(),
+      isSlider: true,
+    },
+    {
+      id: 'immersion',
+      label: 'Zintuiglijke Immersie',
+      category: 'Belevingsdiepte',
+      icon: <Cpu className="w-4 h-4 text-cyan-400" />,
+      value: answers['immersion'] ?? 50,
+      hasValue: hasAnswers,
+      badgeText: (answers['immersion'] ?? 50) > 60 ? 'Ultiem Actief' : (answers['immersion'] ?? 50) < 40 ? 'Passief Relaxt' : 'Gematigd',
+      badgeColor: (answers['immersion'] ?? 50) > 60 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : (answers['immersion'] ?? 50) < 40 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+      insight: (() => {
+        const val = answers['immersion'] ?? 50;
+        if (!hasAnswers) return 'Calibreer de immersieslider om je zintuiglijke behoeften te mappen.';
+        if (val > 60) return 'Grootse honger naar VR-immersie en 3D audio-cinema; je wilt fysiek midden in de reviews staan.';
+        if (val < 40) return 'Je houdt van een relaxte consumptie: ontspannen toekijken zonder actieve inspanning.';
+        return 'Je beleeft content graag met gezonde afstand, zonder de grip op de realiteit te verlegen.';
+      })(),
+      isSlider: true,
+    },
+    {
+      id: 'social',
+      label: 'Sociaal Engagement',
+      category: 'Groepen-vibe',
+      icon: <Heart className="w-4 h-4 text-rose-400" />,
+      value: answers['social'] ?? 50,
+      hasValue: hasAnswers,
+      badgeText: (answers['social'] ?? 50) > 60 ? 'Mega Sociaal' : (answers['social'] ?? 50) < 40 ? 'Individueel Solo' : 'Selectief',
+      badgeColor: (answers['social'] ?? 50) > 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : (answers['social'] ?? 50) < 40 ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' : 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
+      insight: (() => {
+        const val = answers['social'] ?? 50;
+        if (!hasAnswers) return 'Teken hier je sociale voorkeuren op de schaal.';
+        if (val > 60) return 'Altijd op zoek naar bioscoopuitjes met het squadron, gezamenlijke groepschats en multiplayer-ervaringen.';
+        if (val < 40) return 'Ervaar je cultuur en reviews liever op je eigen tempo in een afgesloten, persoonlijke bubble.';
+        return 'Kan genieten van uitstapjes met het squadron, maar evenzeer van een meeslepende solo-sessie.';
+      })(),
+      isSlider: true,
+    },
+    {
+      id: 'breaks',
+      label: 'Reflectie-Dosering',
+      category: 'Prikkelregulatie',
+      icon: <Sliders className="w-4 h-4 text-violet-400" />,
+      value: answers['breaks'] ?? 50,
+      hasValue: hasAnswers,
+      badgeText: (answers['breaks'] ?? 50) > 60 ? 'Bewust Gedoseerd' : (answers['breaks'] ?? 50) < 40 ? 'Non-stop Flow' : 'Gebalanceerd',
+      badgeColor: (answers['breaks'] ?? 50) > 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : (answers['breaks'] ?? 50) < 40 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+      insight: (() => {
+        const val = answers['breaks'] ?? 50;
+        if (!hasAnswers) return 'Geef je reflectiebehoefte een score op je wrapped deck.';
+        if (val > 60) return 'Je hunkert naar nadenkpauzes, reflectie-intervallen en diepe stilte tussen scènes door.';
+        if (val < 40) return 'Jij houdt van direct doorrazen! Een continue stroom van flitsende scènes zonder interrupts.';
+        return 'Je waardeert af en toe een rustmomentje om beelden te verwerken, maar wilt de vaart erin houden.';
+      })(),
+      isSlider: true,
+    },
+  ];
+
+  // Dynamic recommendations purely derived from user inputs (genre, age and sliders)
+  const getRecommendations = () => {
+    const list = [];
+    
+    // 1. Age-Based Recommendation
+    if (ageGroup === '12-13') {
+      list.push({
+        title: 'Flitsende Creatieve Reviews',
+        type: 'Leeftijd-Afgestemd',
+        icon: '🚀',
+        desc: 'Beleef hapklare cultuurproducties en reviews met snelle edits en volop memes, passend bij jouw 12-13 jaar profiel.'
+      });
+    } else if (ageGroup === '14-15') {
+      list.push({
+        title: 'Interactieve Cinema Showcase',
+        type: 'Leeftijd-Afgestemd',
+        icon: '🔥',
+        desc: 'Neem deel aan co-op filmbeoordelingen en sferische groepsgesprekken die perfect aansluiten bij jouw Trendsetter-status.'
+      });
+    } else if (ageGroup === '16-18') {
+      list.push({
+        title: 'Diepgaand Cinefiel Panel',
+        type: 'Leeftijd-Afgestemd',
+        icon: '🎓',
+        desc: 'Volg geavanceerde reviewreeksen over ingewikkelde plottwists en cinemakunst, afgesteld op de 16-18 Cinema Connoisseur.'
+      });
+    } else {
+      list.push({
+        title: 'Algemene Filmvlog-Workshops',
+        type: 'Leeftijd-Afgestemd',
+        icon: '🧭',
+        desc: 'Meld je aan voor onze interactieve co-op sessies om je gepersonaliseerd cultuur-DNA vorm te geven.'
+      });
+    }
+
+    // 2. Genre-Based Recommendation
+    if (hasGenre) {
+      switch (genreId) {
+        case 'comedy':
+          list.push({
+            title: 'Satirische Film Reaction-Rooms',
+            type: 'Sfeer-Matched',
+            icon: '🎭',
+            desc: 'Humoristische podcasts en live vlogs die op ludieke wijze de draak steken met populaire filmclichés.'
+          });
+          break;
+        case 'sports':
+          list.push({
+            title: 'High-Energy Active Esports Vlogs',
+            type: 'Sfeer-Matched',
+            icon: '⚽',
+            desc: 'Adrenaline-gedreven analyses van epische sportmomenten en actie-rijke interactieve reportages.'
+          });
+          break;
+        case 'thriller':
+          list.push({
+            title: 'Sferische Sound-Puzzels & Escape-Rooms',
+            type: 'Sfeer-Matched',
+            icon: '👾',
+            desc: 'Mysterieuze audio-avonturen en zenuwslopende detective scenario\'s waarin jouw scherpte wordt getest.'
+          });
+          break;
+        case 'adventure':
+          list.push({
+            title: 'Digitale Expeditieverslagen & Quests',
+            type: 'Sfeer-Matched',
+            icon: '🏔️',
+            desc: 'Epische reisvlogs en diepe verkenningen waarin ontdekken en grenzen verleggen de hoofdrol spelen.'
+          });
+          break;
+        case 'romance':
+          list.push({
+            title: 'Interpersoonlijke Dialoog & Vriendschap-Reviews',
+            type: 'Sfeer-Matched',
+            icon: '💖',
+            desc: 'Oprechte vlogs, diepgaande talks over menselijke verbindingen en zachte, melodieuze sfeerfragmenten.'
+          });
+          break;
+        case 'scifi':
+          list.push({
+            title: 'Cybernetische Simulaties & Tech-Worldbuilding',
+            type: 'Sfeer-Matched',
+            icon: '🪐',
+            desc: 'Analyses van futuristische speculatieve werelden, synthesizer soundtracks en transhumane visies.'
+          });
+          break;
+      }
+    } else {
+      list.push({
+        title: 'Ontgrendel Je Sfeer-Aanbeveling',
+        type: 'Sfeer-Matched',
+        icon: '🧬',
+        desc: 'Kies een sfeergenre in de live-console om direct opgedane, specifieke videotips te matchen.'
+      });
+    }
+
+    // 3. Slider-Based Recommendation
+    const durationVal = answers['duration'] ?? 50;
+    const immersionVal = answers['immersion'] ?? 50;
+    const socialVal = answers['social'] ?? 50;
+    const breaksVal = answers['breaks'] ?? 50;
+
+    if (socialVal > 60) {
+      list.push({
+        title: 'Co-op Groepschats & Live Discussies',
+        type: 'Voorkeur-Tuning',
+        icon: '👥',
+        desc: 'Jouw sociale behoefte is sterk aanwezig! Organiseer met vrienden live video-beoordelingen of groeps-sessies.'
+      });
+    } else if (immersionVal > 60) {
+      list.push({
+        title: 'Dolby Atmos Spatial Cinema',
+        type: 'Voorkeur-Tuning',
+        icon: '🎧',
+        desc: 'Geniet maximaal met spatial audio en meeslepende 3D-VR cinema om de belevingsdiepte volledig tot haar recht te laten komen.'
+      });
+    } else if (durationVal < 40) {
+      list.push({
+        title: 'Shortform Vlog-Highlights',
+        type: 'Voorkeur-Tuning',
+        icon: '📱',
+        desc: 'Jouw flitsende, korte duurlengte-ijking sluit feilloos aan op flitsende clips, TikTok trends en film-samenvattingen.'
+      });
+    } else if (breaksVal > 60) {
+      list.push({
+        title: 'Slow Cinema & Doordachte Reviews',
+        type: 'Voorkeur-Tuning',
+        icon: '🧘',
+        desc: 'Kies voor diepgaande documentaires en artistieke video-essays die de tijd nemen voor bezinning en pauzes.'
+      });
+    } else {
+      list.push({
+        title: 'Universele Film- & Gamedock Mix',
+        type: 'Voorkeur-Tuning',
+        icon: '✨',
+        desc: 'Dankzij jouw mooi gebalanceerde regelaars geniet je van een perfecte mix tussen snelle actie en lange verhalen.'
+      });
+    }
+
+    return list;
   };
 
   const slides = [
@@ -1049,6 +1316,151 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   </div>
                 </div>
 
+              </div>
+
+              {/* BRAND NEW PERSONALIZED WRAPPED MATRIX TABLE */}
+              <div className="glass border border-white/5 rounded-[2.5rem] p-6 md:p-8 mb-8 bg-black/50 shadow-2xl relative overflow-hidden text-left">
+                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-brand/10 via-brand/40 to-brand/10" />
+                
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-5 mb-6">
+                  <div>
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-brand font-black border border-brand/20 px-2.5 py-0.5 bg-brand/5 rounded-full inline-block mb-1.5">
+                      PERSOONLIJK DOSSIER ANALYSE 📊
+                    </span>
+                    <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight">
+                      MIJN CO-OP WRAPPED MATRIX
+                    </h3>
+                    <p className="text-xs text-white/50 font-light mt-1">
+                      Een exact overzicht van de variabelen die voortvloeien uit jouw selecties, gekoppeld aan 100% dynamisch berekende inzichten.
+                    </p>
+                  </div>
+                </div>
+
+                {/* The Responsive Modern Table wrapper */}
+                <div className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-white/[0.01]">
+                  <table className="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                      <tr className="border-b border-white/5 font-mono text-[9px] uppercase text-white/40 bg-white/[0.02]">
+                        <th className="py-4 px-5 font-bold tracking-widest w-[25%]">VARIABELE</th>
+                        <th className="py-4 px-5 font-bold tracking-widest w-[20%]">GEKOZEN WAARDE</th>
+                        <th className="py-4 px-5 font-bold tracking-widest w-[20%]">STATUS / METRISCH</th>
+                        <th className="py-4 px-5 font-bold tracking-widest w-[35%]">GEPERSONALISEERD INZICHT</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-xs text-white">
+                      {wrappedTableData.map((row) => (
+                        <tr key={row.id} className="hover:bg-white/[0.02] transition-colors group">
+                          {/* 1. Variable Name & Icon */}
+                          <td className="py-4 px-5 font-medium">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                {row.icon}
+                              </div>
+                              <div>
+                                <div className="text-white font-display font-bold uppercase tracking-wide text-[11px]">{row.label}</div>
+                                <div className="text-[10px] text-white/30 font-mono font-medium">{row.category}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* 2. Selection / Percentage */}
+                          <td className="py-4 px-5">
+                            {row.isSlider ? (
+                              <div className="flex flex-col gap-1.5 max-w-[140px]">
+                                <div className="font-mono font-bold text-white flex items-center gap-1.5">
+                                  <span>{row.value}%</span>
+                                  <span className="text-[8px] text-brand uppercase font-black tracking-widest">WEIGHT</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                                  <div 
+                                    className="h-full bg-brand rounded-full"
+                                    style={{ width: `${row.value}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-[11px] text-white/85 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 inline-block font-bold">
+                                {row.value}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* 3. Badge Indicators */}
+                          <td className="py-4 px-5">
+                            <span className={cn(
+                              "px-2.5 py-1 rounded-full text-[9px] font-mono tracking-widest font-black uppercase border inline-block",
+                              row.badgeColor
+                            )}>
+                              {row.badgeText}
+                            </span>
+                          </td>
+
+                          {/* 4. Logically Derived Insight */}
+                          <td className="py-4 px-5 text-[11px] text-white/55 leading-relaxed font-light">
+                            {row.insight}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* TAIILORED RECOMMENDATIONS GRID */}
+              <div className="glass border border-white/5 rounded-[2.5rem] p-6 md:p-8 mb-8 bg-black/50 shadow-2xl relative overflow-hidden text-left">
+                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-brand/10 via-brand/40 to-brand/10" />
+                
+                <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-2.5 py-0.5 bg-[#00ffcc]/5 rounded-full inline-block mb-1.5">
+                  OP MAAT GEMAAKTE EXCLUSIEVE CURATIE 🎯
+                </span>
+                <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight -mt-0.5">
+                  GEPERSONALISEERDE AANBEVELINGEN
+                </h3>
+                <p className="text-xs text-white/50 font-light mt-1 mb-6">
+                  Op basis van je gekozen sfeer, leeftijd en schuifregelaars hebben we de volgende drie unieke aanbevelingen specifiek voor jou afgestemd.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {getRecommendations().map((rec, index) => (
+                    <div 
+                      key={index} 
+                      className="glass border border-white/5 hover:border-brand/20 bg-white/[0.01] hover:bg-white/[0.02] p-5 rounded-2xl flex flex-col justify-between group transition-all relative overflow-hidden shadow-md"
+                    >
+                      {/* Decorative index indicator */}
+                      <div className="absolute top-4 right-4 font-mono text-[11px] font-black text-white/10 group-hover:text-brand/20 transition-colors">
+                        0{index + 1}
+                      </div>
+
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          {/* Type Tag */}
+                          <span className="font-mono text-[8px] text-white/30 uppercase tracking-widest font-black block mb-3">
+                            [{rec.type}]
+                          </span>
+
+                          {/* Recommendation Title */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl group-hover:scale-110 transition-transform">{rec.icon}</span>
+                            <h4 className="text-xs font-display font-black uppercase tracking-wide text-white leading-tight">
+                              {rec.title}
+                            </h4>
+                          </div>
+
+                          {/* Recommendation Description */}
+                          <p className="text-[10px] text-white/45 leading-relaxed font-light mt-1">
+                            {rec.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Small visual confirmation button */}
+                      <div className="border-t border-white/5 pt-3.5 mt-4 flex items-center justify-between text-[8px] font-mono font-black uppercase tracking-wider text-white/20 group-hover:text-brand transition-colors">
+                        <span>AANBEVOLEN ACTIE</span>
+                        <ArrowRight className="w-3 h-3 text-current transform group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* LIVE VIBE TUNING & REAL-TIME CALIBRATION CONSOLE CARD */}

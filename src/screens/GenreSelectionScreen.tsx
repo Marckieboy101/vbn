@@ -51,9 +51,9 @@ export const GenreSelectionScreen: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col p-4 sm:p-8 pt-20 max-w-[1200px] mx-auto justify-center">
       <header className="mb-10 md:mb-16 text-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold uppercase mb-3">Selecteer een <span className="text-brand">Genre</span></h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold uppercase mb-3">Selecteer je <span className="text-brand">Sfeer</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-sm sm:text-base">
-          Kies een genre dat bij jou past.
+          Kies een sfeer die op dit moment bij je past om jouw ervaring te kalibreren.
         </p>
       </header>
 
@@ -73,7 +73,7 @@ export const GenreSelectionScreen: React.FC = () => {
                 }, 400);
               }}
               className={cn(
-                "relative h-20 sm:h-14 md:h-50 lg:h-50 rounded-2xl md:rounded-3xl border overflow-hidden bg-black group transition-all duration-300",
+                "relative h-28 sm:h-44 md:h-52 lg:h-60 rounded-2xl md:rounded-3xl border overflow-hidden bg-black group transition-all duration-300",
                 isSelected ? "border-brand shadow-[0_0_30px_rgba(255,80,80,0.15)] scale-[1.02]" : "border-white/10 glass hover:border-white/30 hover:scale-[1.01]",
                 isTransitioning && !isSelected && "opacity-30 scale-95"
               )}

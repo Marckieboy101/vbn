@@ -34,14 +34,18 @@ export const CommunityScreen: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="text-5xl md:text-7xl font-display font-bold uppercase mb-12 tracking-tight leading-none"
         >
-          Join <span className="text-brand">de</span> Community
+          Join <span className="text-brand">the</span> Community
         </motion.h1>
 
         <motion.div 
-                
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+          className="relative group mb-16"
         >
           {/* QR Code Container */}
           <div className="w-64 h-64 md:w-80 md:h-80 mx-auto p-4 glass rounded-[2.5rem] border-white/10 relative overflow-hidden flex items-center justify-center bg-black/20 backdrop-blur-xl group-hover:border-brand/30 transition-all duration-700 shadow-[0_0_80px_rgba(0,0,0,0.5)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             
             {/* The "QR Code" (Using a styled SVG for consistent look) */}
             <div className="relative z-10 w-full h-full text-white/80 group-hover:text-brand transition-colors duration-500">

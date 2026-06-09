@@ -84,6 +84,7 @@ export const InstructionsScreen: React.FC = () => {
             <span className="relative z-10 text-xl font-display font-bold uppercase tracking-[0.2em] group-hover:text-brand transition-colors">
               Ga naar de slide pagina's
             </span>
+            <div className="absolute inset-0 bg-brand/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </InteractiveButton>
         </div>
       </motion.div>

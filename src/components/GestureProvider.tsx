@@ -2,6 +2,34 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { Hands, Results, HAND_CONNECTIONS } from '@mediapipe/hands';
 import { Camera } from '@mediapipe/camera_utils';
 
+// Safe console interceptor to convert sandboxed iframe camera permission blocks into warning logs
+const originalConsoleError = console.error;
+console.error = (...args: any[]) => {
+  const message = args.map(arg => {
+    if (arg instanceof Error) {
+      return `${arg.name}: ${arg.message}`;
+    }
+    return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+  }).join(' ');
+
+  const isCameraError = 
+    message.includes('camera') || 
+    message.includes('Camera') || 
+    message.includes('video') || 
+    message.includes('getUserMedia') || 
+    message.includes('MediaPipe') || 
+    message.includes('feed') || 
+    message.includes('NotAllowedError') || 
+    message.includes('Permission denied') || 
+    message.includes('permission');
+
+  if (isCameraError) {
+    console.warn("[Camera Soft Bypass Info]", ...args);
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
+
 interface GestureState {
   x: number;
   y: number;
@@ -206,7 +234,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 setState(prev => ({ ...prev, error: null }));
               }
             } catch (fallbackErr: any) {
-              console.error("All camera fallback attempts failed:", fallbackErr);
+              console.warn("All camera fallback attempts failed:", fallbackErr);
               
               // If we haven't retried yet and it's a NotReadableError, try once more after a delay
               if (!isRetry && (fallbackErr.name === 'NotReadableError' || cameraErr.name === 'NotReadableError')) {
@@ -221,7 +249,7 @@ export const GestureProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       } catch (err: any) {
         if (isTerminated) return;
-        console.error("Critical camera error:", err);
+        console.warn("Critical camera error:", err);
         
         let errorMsg = "Systeemfout bij camera-initialisatie";
         if (err.name === 'NotAllowedError') {

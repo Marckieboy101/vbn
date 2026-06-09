@@ -36,6 +36,7 @@ export interface ModerationResult {
   toxic: boolean;
   blockedWordsDetected: string[];
   language: string;
+  positiveSentimentWords: string[];
 }
 
 export async function moderateAndRefineSpeech(text: string, customWords: string[]): Promise<ModerationResult> {
@@ -45,10 +46,11 @@ export async function moderateAndRefineSpeech(text: string, customWords: string[
       Review the following transcribed message spoken by a visitor:
       "${text}"
 
-      Please perform two tasks:
+      Please perform three tasks:
       1. Refine the speech: Fix obvious grammatical glitches, capitalize properly, add logical punctuation, and strip out redundant filler words (such as "uhm", "uh", "eh", "ah", "you know") while keeping the speaker's original meaning intact.
       2. Content Moderation: Detect if the text contains severe curse words, hate speech, explicit profanities, or threat elements. Also cross-reference these custom blocked words provided by the operator: ${customWords.length > 0 ? customWords.join(", ") : "none"}.
          If any swear, offensive, or custom blocked words are found, flag them in the "blockedWordsDetected" output list.
+      3. Sentiment Analysis: Identify any individual words or short phrases that express a strong positive sentiment, appreciation, enthusiasm, satisfaction, or joy (such as 'leuk', 'geweldig', 'fijn', 'prachtig', 'fantastisch', 'goed', 'top', 'mooi', 'heerlijk', 'great', 'awesome', 'nice', 'enjoyed', 'excellent', etc.). Include them in the "positiveSentimentWords" output list.
 
       Provide your review securely in the specified JSON format.
     `;
@@ -77,9 +79,14 @@ export async function moderateAndRefineSpeech(text: string, customWords: string[
             language: {
               type: Type.STRING,
               description: "The primary language detected, such as 'Dutch', 'English', 'French', etc."
+            },
+            positiveSentimentWords: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "List of identified positive sentiment key words or phrases (e.g. 'geweldig', 'leuk', 'great', 'awesome')."
             }
           },
-          required: ["refinedText", "toxic", "blockedWordsDetected", "language"]
+          required: ["refinedText", "toxic", "blockedWordsDetected", "language", "positiveSentimentWords"]
         }
       }
     });
@@ -92,7 +99,8 @@ export async function moderateAndRefineSpeech(text: string, customWords: string[
       refinedText: text,
       toxic: false,
       blockedWordsDetected: [],
-      language: "Unknown"
+      language: "Unknown",
+      positiveSentimentWords: []
     };
   } catch (error) {
     console.error("Gemini Speech Moderation Error:", error);
@@ -100,7 +108,8 @@ export async function moderateAndRefineSpeech(text: string, customWords: string[
       refinedText: text,
       toxic: false,
       blockedWordsDetected: [],
-      language: "NL"
+      language: "NL",
+      positiveSentimentWords: []
     };
   }
 }
