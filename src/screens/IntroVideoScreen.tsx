@@ -150,16 +150,39 @@ export const IntroVideoScreen: React.FC = () => {
     }
   };
 
-  // Auto-play when screen is mounted
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-      videoRef.current.play().catch((err) => {
-        console.log("Autoplay was blocked or video not ready", err);
-        setIsPlaying(false);
-      });
+  const attemptPlay = () => {
+    if (!videoRef.current) return;
+    
+    videoRef.current.muted = isMuted;
+    
+    const playPromise = videoRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.log("Unmuted/default autoplay was blocked or video not ready, attempting muted fallback...", err);
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play()
+              .then(() => {
+                setIsPlaying(true);
+              })
+              .catch((finalErr) => {
+                console.error("Muted autoplay also blocked", finalErr);
+                setIsPlaying(false);
+              });
+          }
+        });
     }
-  }, []);
+  };
+
+  // Auto-play when screen is mounted or when video source changes
+  useEffect(() => {
+    attemptPlay();
+  }, [videoSrc]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-black text-white">
@@ -227,10 +250,12 @@ export const IntroVideoScreen: React.FC = () => {
               onClick={handlePlayPause}
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
+              onCanPlay={attemptPlay}
               onError={handleVideoError}
               className="w-full h-full object-cover cursor-pointer"
               playsInline
               loop
+              autoPlay
               muted={isMuted}
             />
 
