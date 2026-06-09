@@ -25,7 +25,7 @@ export const CommunityScreen: React.FC = () => {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8"
         >
           <Users className="w-4 h-4 text-brand" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/60">Community Connection</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/60">ection</span>
         </motion.div>
 
         <motion.h1 
@@ -36,9 +36,7 @@ export const CommunityScreen: React.FC = () => {
         >
           Join <span className="text-brand">de</span> Community
         </motion.h1>
-
         <motion.div 
-                
         >
           {/* QR Code Container */}
           <div className="w-64 h-64 md:w-80 md:h-80 mx-auto p-4 glass rounded-[2.5rem] border-white/10 relative overflow-hidden flex items-center justify-center bg-black/20 backdrop-blur-xl group-hover:border-brand/30 transition-all duration-700 shadow-[0_0_80px_rgba(0,0,0,0.5)]">

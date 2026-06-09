@@ -104,7 +104,7 @@ export const LandingScreen: React.FC = () => {
           }}
         >
           KOM <br />
-          <span className="text-brand text-200 text-glow-red">DICHTERBIJ</span><br />
+          <span className="text-brand text-glow-red">DICHTERBIJ</span><br />
           STAAN
         </motion.h1>
 

@@ -527,7 +527,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                     {recognitionError ? 'Opnieuw proberen' : 'Ja, ik spreek in'}
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-brand/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </InteractiveButton>
               
               <InteractiveButton 
