@@ -60,15 +60,6 @@ export const AgeSelectionScreen: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col p-4 sm:p-8 pt-20 max-w-[1200px] mx-auto justify-center select-none">
       <header className="mb-12 md:mb-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-4 text-xs font-mono tracking-widest text-brand uppercase"
-        >
-          <Shield className="w-3.5 h-3.5" />
-          <span>Gepersonaliseerd Profiel</span>
-        </motion.div>
         
         <motion.h2 
           initial={{ opacity: 0, y: 10 }}
@@ -85,7 +76,7 @@ export const AgeSelectionScreen: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-white/40 max-w-xl mx-auto text-sm sm:text-base leading-relaxed"
         >
-          Selecteer je leeftijdgroep zodat we de vetste video-reviews en films perfect op jouw niveau kunnen afstemmen.
+          Selecteer hier tot welke leeftijdscategorie je behoort
         </motion.p>
       </header>
 
