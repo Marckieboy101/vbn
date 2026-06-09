@@ -1,5 +1,6 @@
 import { GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 const provider = new GoogleAuthProvider();
 // Request only the Sheets/Spreadsheets scope as per principle of least privilege
@@ -114,7 +115,7 @@ export const writeHeaders = async (spreadsheetId: string, sheetName: string): Pr
     "Immersie Spectrum",
     "Sociaal Engagement",
     "Reflectie-Pauzes",
-    "Reserved Col 1",
+    "Leeftijdsgroep",
     "Reserved Col 2",
     "Reserved Col 3",
     "Voice Feedback (Gezuiverd)",
@@ -188,7 +189,7 @@ export const syncSessionsToSpreadsheet = async (
       getParamVal("immersion") !== "N/V" ? getParamVal("immersion") : getParamVal("immers"),
       getParamVal("social") !== "N/V" ? getParamVal("social") : getParamVal("socia"),
       getParamVal("breaks") !== "N/V" ? getParamVal("breaks") : getParamVal("pauz"),
-      "-",
+      s.ageGroup || "-",
       "-",
       "-",
       s.voice_feedback || "-",
@@ -218,5 +219,50 @@ export const syncSessionsToSpreadsheet = async (
   if (!response.ok) {
     const errText = await response.text();
     throw new Error(`Fout bij schrijven sessiedata: ${errText}`);
+  }
+};
+
+// Automatic background sync trigger
+export const triggerAutomaticGoogleSheetsSync = async (): Promise<boolean> => {
+  const token = getCachedToken();
+  if (!token) {
+    console.log("[Auto-Sync] Geen Google Sheets OAuth token gecached. Automatische sync overgeslagen.");
+    return false;
+  }
+
+  const saved = localStorage.getItem("vb_spreadsheet");
+  if (!saved) {
+    console.log("[Auto-Sync] Geen actieve spreadsheet gekoppeld in localStorage. Automatische sync overgeslagen.");
+    return false;
+  }
+
+  try {
+    const spreadsheet: SpreadsheetInfo = JSON.parse(saved);
+    if (!spreadsheet.spreadsheetId) return false;
+
+    console.log("[Auto-Sync] Automatische synchronisatie gestart voor:", spreadsheet.title);
+
+    // 1. Fetch sessions
+    const querySnapshot = await getDocs(collection(db, "sessions"));
+    const sessions: any[] = [];
+    querySnapshot.forEach((docSnap) => {
+      sessions.push(docSnap.data());
+    });
+
+    // Sort descending by timestamp
+    sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    // 2. Get sheet tab title
+    const sheetName = await getSheetFirstTabTitle(spreadsheet.spreadsheetId);
+
+    // 3. Write headers and sync
+    await writeHeaders(spreadsheet.spreadsheetId, sheetName);
+    await syncSessionsToSpreadsheet(spreadsheet.spreadsheetId, sheetName, sessions);
+
+    console.log("[Auto-Sync] Automatische synchronisatie succesvol afgerond.");
+    return true;
+  } catch (err) {
+    console.warn("[Auto-Sync] Fout tijdens automatische Google Sheets synchronisatie:", err);
+    return false;
   }
 };
