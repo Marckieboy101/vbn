@@ -155,7 +155,7 @@ export const LandingScreen: React.FC = () => {
                 </InteractiveButton>
 
                 {/* Optional Retry Button */}
-                <button
+                <InteractiveButton
                   onClick={() => {
                     setStep('voice_feedback');
                   }}
@@ -163,7 +163,7 @@ export const LandingScreen: React.FC = () => {
                 >
                   <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                   <span>Feedback geven</span>
-                </button>
+                </InteractiveButton>
               </div>
             </motion.div>
           )}
