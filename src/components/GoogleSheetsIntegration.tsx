@@ -23,8 +23,7 @@ import {
   SpreadsheetInfo,
   createSpreadsheet
 } from "../services/googleSheetsService";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { getSavedSessions } from "../lib/sessionStorage";
 import { cn } from "../lib/utils";
 
 export const GoogleSheetsIntegration: React.FC = () => {
@@ -83,6 +82,22 @@ export const GoogleSheetsIntegration: React.FC = () => {
         setAuthorized(true);
         setUserEmail(res.user.email);
         setStatusMsg({ text: `Succesvol ingelogd als ${res.user.email}`, type: "success" });
+
+        const savedSpreadsheet = localStorage.getItem("vb_spreadsheet");
+        if (!savedSpreadsheet && !currentSpreadsheet) {
+          setStatusMsg({ text: "Nieuwe spreadsheet wordt automatisch aangemaakt...", type: "info" });
+          const info = await createSpreadsheet("Filmvibe Feedback Sessiedata");
+          const sheetName = await getSheetFirstTabTitle(info.spreadsheetId);
+          await writeHeaders(info.spreadsheetId, sheetName);
+
+          setCurrentSpreadsheet(info);
+          setSheetInput(info.spreadsheetUrl);
+          localStorage.setItem("vb_spreadsheet", JSON.stringify(info));
+          setStatusMsg({
+            text: `Nieuwe spreadsheet automatisch aangemaakt en gekoppeld: ${info.title}`,
+            type: "success",
+          });
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -215,7 +230,7 @@ export const GoogleSheetsIntegration: React.FC = () => {
     setStatusMsg({ text: "Sessiegegevens synchroniseren...", type: "info" });
     
     const steps = [
-      "1/4 Sessies ophalen uit Firestore...",
+      "1/4 Sessies laden uit lokale opslag...",
       "2/4 Doelgroep tabblad opvragen...",
       "3/4 Kolomkoppen (headers) schrijven...",
       "4/4 Gegevens uploaden naar spreadsheet..."
@@ -224,15 +239,9 @@ export const GoogleSheetsIntegration: React.FC = () => {
     setCurrentStepIndex(0);
 
     try {
-      // 1. Fetch all sessions from Firestore order by timestamp descending
-      const sessionsRef = collection(db, "sessions");
-      const querySnapshot = await getDocs(sessionsRef);
-      const sessions: any[] = [];
-      querySnapshot.forEach((docSnap) => {
-        sessions.push(docSnap.data());
-      });
+      const sessions = getSavedSessions();
 
-      // Sort sessions by timestamp descending (newest on top) or ascending (row-by-row)
+      // Sort sessions by timestamp descending (newest on top)
       sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
       setCurrentStepIndex(1);

@@ -1,7 +1,9 @@
-# Real-Time Multi-Website Synchronization Manual
-### Modern, Scalable & High-Performance Architecture Blueprint
+# Real-Time Multi-Website Synchronization Manual (LEGACY - Replaced with Google Sheets)
+### Legacy Archive: Previously Used Firebase-Based Architecture
 
-This blueprint covers how to connect two separate websites (Website 1: Main Frontend/User Experience & Website 2: Dashboard/AI processing/Admin center) to work seamlessly as one real-time cohesive experiences.
+**Note**: This document describes a deprecated architecture. The application has been refactored to use Google Sheets as the central data layer instead of Firebase Firestore. This file is kept for reference only.
+
+---
 
 ---
 

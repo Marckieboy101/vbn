@@ -20,8 +20,7 @@ import {
 import { InteractiveButton } from '../components/InteractiveButton';
 import { soundManager } from '../lib/sound';
 import { cn } from '../lib/utils';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { saveSessionData } from '../lib/sessionStorage';
 import { moderateAndRefineSpeech, ModerationResult } from '../services/geminiService';
 import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
@@ -50,7 +49,6 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      // Reset DOM visual modifications when mic is idle or muted
       const ring1 = document.getElementById('mic-pulse-ring-1');
       const ring2 = document.getElementById('mic-pulse-ring-2');
       const btn = document.getElementById('mic-pulse-button');
@@ -68,7 +66,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioCtx = new AudioContextClass();
         const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 64; // Cleaner frequency display for ambient spectrum
+        analyser.fftSize = 64;
         
         const source = audioCtx.createMediaStreamSource(stream);
         source.connect(analyser);
@@ -99,10 +97,8 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
 
           animationRef.current = requestAnimationFrame(draw);
           
-          // Get frequency data
           analyser.getByteFrequencyData(dataArray);
 
-          // Calculate average intensity for high fidelity pulsing
           let sum = 0;
           let activeBuckets = 0;
           for (let i = 0; i < bufferLength; i++) {
@@ -110,10 +106,9 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
             if (dataArray[i] > 10) activeBuckets++;
           }
           const average = sum / (activeBuckets || bufferLength);
-          let normVolume = average / 140; // Max amplitude normalization
+          let normVolume = average / 140;
           if (normVolume > 1) normVolume = 1;
 
-          // Reactively update parent buttons using direct DOM selection for flawless 60fps performance without React-render lag
           const pulseRing1 = document.getElementById('mic-pulse-ring-1');
           const pulseRing2 = document.getElementById('mic-pulse-ring-2');
           const micButton = document.getElementById('mic-pulse-button');
@@ -133,7 +128,6 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
 
           currentCtx.clearRect(0, 0, width, height);
 
-          // Render soft-glow responsive frequency spectrum bars in background
           const barWidth = (width / bufferLength) * 1.4;
           let barX = 0;
           for (let i = 0; i < bufferLength; i++) {
@@ -158,7 +152,6 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
             barX += barWidth;
           }
 
-          // Render the beautifully-styled flowing continuous sine waveforms
           phase += 0.06 + normVolume * 0.08;
 
           const drawSineWave = (frequency: number, ampMultiplier: number, phaseOffset: number, color: string, lineWidth: number) => {
@@ -168,7 +161,6 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
             for (let xPos = 0; xPos <= width; xPos += 2) {
               const taper = Math.sin((xPos / width) * Math.PI);
               const sinAngle = xPos * frequency + phaseOffset;
-              // Base line thickness + reaction to amplitude
               const y = height / 2 + Math.sin(sinAngle) * (14 + normVolume * 28) * ampMultiplier * taper;
               currentCtx.lineTo(xPos, y);
             }
@@ -178,10 +170,9 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream, isMuted }) =>
             currentCtx.stroke();
           };
 
-          // Draw overlap glowing wave layers
-          drawSineWave(0.018, 0.9, phase, 'rgba(244, 63, 94, 0.95)', 2.5); // Main branding color line
-          drawSineWave(0.012, 0.6, phase * 1.35 + Math.PI / 4, 'rgba(249, 115, 22, 0.45)', 1.5); // Secondary orange trail
-          drawSineWave(0.026, 0.45, phase * 0.7 - Math.PI / 3, 'rgba(236, 72, 153, 0.35)', 1.0); // Tertiary highlight
+          drawSineWave(0.018, 0.9, phase, 'rgba(244, 63, 94, 0.95)', 2.5);
+          drawSineWave(0.012, 0.6, phase * 1.35 + Math.PI / 4, 'rgba(249, 115, 22, 0.45)', 1.5);
+          drawSineWave(0.026, 0.45, phase * 0.7 - Math.PI / 3, 'rgba(236, 72, 153, 0.35)', 1.0);
         };
 
         draw();
@@ -231,7 +222,6 @@ const renderHighlightedText = (text: string, positiveWords: string[] = []) => {
   if (!text) return "";
   const wordsToHighlight = positiveWords && positiveWords.length > 0 ? positiveWords : LIVE_POSITIVE_WORDS;
 
-  // Escape special regex chars
   const escapedWords = wordsToHighlight
     .map(word => word.trim())
     .filter(Boolean)
@@ -239,7 +229,6 @@ const renderHighlightedText = (text: string, positiveWords: string[] = []) => {
 
   if (escapedWords.length === 0) return text;
 
-  // Sort by length descending to match longer phrases first
   escapedWords.sort((a, b) => b.length - a.length);
 
   try {
@@ -247,7 +236,6 @@ const renderHighlightedText = (text: string, positiveWords: string[] = []) => {
     const parts = text.split(regex);
     
     return parts.map((part, index) => {
-      // Every odd part is a matched positive-sentiment word or phrase
       if (index % 2 !== 0) {
         return (
           <mark 
@@ -269,27 +257,23 @@ const renderHighlightedText = (text: string, positiveWords: string[] = []) => {
 export const VoiceFeedbackScreen: React.FC = () => {
   const { setStep, sessionId } = useStore();
   
-  // App Phases
   const [phase, setPhase] = useState<'ask' | 'recording' | 'ai_review' | 'thanks'>('ask');
   
-  // Continuous transcription builder states
-  const [spokenHistory, setSpokenHistory] = useState('');
-  const [sessionFinalText, setSessionFinalText] = useState('');
-  const [sessionInterimText, setSessionInterimText] = useState('');
+  // FIX: Removed spokenHistory from React state for the hot path.
+  // It is now ONLY stored in a ref to avoid stale closures in async speech handlers.
+  // setSpokenHistoryDisplay is only used to trigger re-renders for the displayed text.
+  const [spokenHistoryDisplay, setSpokenHistoryDisplay] = useState('');
 
-  // Real-time Text output states
   const [transcription, setTranscription] = useState('');
   const [rawTranscription, setRawTranscription] = useState('');
   const [interimOutput, setInterimOutput] = useState('');
   const [moderatedInterim, setModeratedInterim] = useState('');
   const [timeLeft, setTimeLeft] = useState(30);
   
-  // Error / State states
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   
-  // Supported Languages
   const [languages] = useState([
     { code: 'nl-NL', label: 'Nederlands', flag: '🇳🇱' },
     { code: 'en-US', label: 'English', flag: '🇬🇧' },
@@ -298,49 +282,40 @@ export const VoiceFeedbackScreen: React.FC = () => {
   ]);
   const [activeLangCode, setActiveLangCode] = useState('nl-NL');
 
-  // Custom Moderation Filter settings
   const [moderationAction, setModerationAction] = useState<'censor' | 'block' | 'warn'>('censor');
   const [customBlockedWords, setCustomBlockedWords] = useState<string[]>(['stom', 'slecht', 'waardeloos']);
   const [newWordInput, setNewWordInput] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [profanityMatches, setProfanityMatches] = useState<string[]>([]);
 
-  // AI Review/Polishing Step
   const [aiPolishing, setAiPolishing] = useState(false);
   const [aiResult, setAiResult] = useState<ModerationResult | null>(null);
 
-  // Recognition ref
   const recognitionRef = useRef<any>(null);
   const isManuallyStoppedRef = useRef<boolean>(false);
 
-  // Synchronized refs to completely bypass stale state closure bugs in async audio event handlers
+  // --- REFS for stale-closure-free access inside async speech handlers ---
   const phaseRef = useRef(phase);
   const isMutedRef = useRef(isMuted);
   const activeLangCodeRef = useRef(activeLangCode);
-  const spokenHistoryRef = useRef(spokenHistory);
-  const sessionFinalTextRef = useRef(sessionFinalText);
+  // FIX: spokenHistory lives ONLY here; updated synchronously before any restart
+  const spokenHistoryRef = useRef('');
+  // FIX: micStream lives in a ref too so releaseMicStream always sees the latest stream
+  const micStreamRef = useRef<MediaStream | null>(null);
+  // FIX: moderation config refs so the onresult handler always has fresh values
+  const customBlockedWordsRef = useRef(customBlockedWords);
+  const moderationActionRef = useRef(moderationAction);
 
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { activeLangCodeRef.current = activeLangCode; }, [activeLangCode]);
+  useEffect(() => { customBlockedWordsRef.current = customBlockedWords; }, [customBlockedWords]);
+  useEffect(() => { moderationActionRef.current = moderationAction; }, [moderationAction]);
 
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
+  // Keep micStreamRef in sync with state for the visualizer (state) 
+  // while also giving releaseMicStream a reliable ref
+  useEffect(() => { micStreamRef.current = micStream; }, [micStream]);
 
-  useEffect(() => {
-    activeLangCodeRef.current = activeLangCode;
-  }, [activeLangCode]);
-
-  useEffect(() => {
-    spokenHistoryRef.current = spokenHistory;
-  }, [spokenHistory]);
-
-  useEffect(() => {
-    sessionFinalTextRef.current = sessionFinalText;
-  }, [sessionFinalText]);
-
-  // Moderation / Censoring calculation
   const runModerationFilter = useCallback((text: string, wordsList: string[], action: 'censor' | 'block' | 'warn') => {
     if (!text) return { censored: '', matches: [] };
 
@@ -366,7 +341,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     return { censored, matches };
   }, []);
 
-  // Update dynamic censorship in real time if options change
   useEffect(() => {
     if (rawTranscription) {
       const { censored, matches } = runModerationFilter(rawTranscription, customBlockedWords, moderationAction);
@@ -385,10 +359,10 @@ export const VoiceFeedbackScreen: React.FC = () => {
     }
   }, [rawTranscription, interimOutput, customBlockedWords, moderationAction, runModerationFilter]);
 
-  // Handle stream initialization
   const acquireMicStream = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
       setMicStream(stream);
       return stream;
     } catch (err: any) {
@@ -398,181 +372,211 @@ export const VoiceFeedbackScreen: React.FC = () => {
     }
   };
 
+  // FIX: Uses ref instead of stale state closure
   const releaseMicStream = () => {
-    if (micStream) {
-      micStream.getTracks().forEach(track => track.stop());
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach(track => track.stop());
+      micStreamRef.current = null;
       setMicStream(null);
     }
   };
 
-  // Start Voice Recognition Core
-  const startRecording = useCallback(async () => {
+  // FIX: startRecording is stable. All mutable values are read from refs, not closures.
+  const startRecording = useCallback(async (existingStream?: MediaStream) => {
     setPhase('recording');
     setRecognitionError(null);
     setIsMuted(false);
     isManuallyStoppedRef.current = false;
-    setSessionFinalText('');
-    setSessionInterimText('');
-    setInterimOutput('');
     soundManager.play('SUCCESS', 0.4);
 
-    const stream = await acquireMicStream();
+    // Reuse passed stream (e.g. on language change / unmute) or acquire a new one
+    const stream = existingStream ?? await acquireMicStream();
     if (!stream) {
       setPhase('ask');
       return;
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const startSpeechEngine = () => {
-        // Stop if user muted, finished or navigated away
-        if (phaseRef.current !== 'recording' || isMutedRef.current || isManuallyStoppedRef.current) {
-          return;
-        }
+    if (!SpeechRecognition) {
+      console.warn('Browser SpeechRecognition not natively supported.');
+      setTranscription('Speech recognition wordt niet optimaal ondersteund in deze browser, maar we slaan je feedback wel op!');
+      return;
+    }
 
-        if (recognitionRef.current) {
-          try {
-            recognitionRef.current.onend = null;
-            recognitionRef.current.abort();
-          } catch (e) {}
-        }
+    const startSpeechEngine = () => {
+      if (phaseRef.current !== 'recording' || isMutedRef.current || isManuallyStoppedRef.current) {
+        return;
+      }
 
-        const rec = new SpeechRecognition();
-        rec.continuous = true;
-        rec.interimResults = true;
-        rec.lang = activeLangCodeRef.current;
-
-        rec.onresult = (event: any) => {
-          let sessionFinal = '';
-          let sessionInterim = '';
-
-          for (let i = 0; i < event.results.length; ++i) {
-            const text = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              sessionFinal += (sessionFinal ? ' ' : '') + text;
-            } else {
-              sessionInterim += (sessionInterim ? ' ' : '') + text;
-            }
-          }
-
-          setSessionFinalText(sessionFinal);
-          setSessionInterimText(sessionInterim);
-          setInterimOutput(sessionInterim);
-
-          // Word-by-word ultra-low latency updates combining previous blocks with live session text
-          const currentFullRaw = [spokenHistoryRef.current, sessionFinal].filter(Boolean).join(' ');
-          setRawTranscription(currentFullRaw);
-        };
-
-        rec.onerror = (event: any) => {
-          console.error('Speech recognition error event:', event.error);
-          
-          if (event.error === 'not-allowed') {
-            setRecognitionError('Microfoon toegang geweigerd');
-            setPhase('ask');
-            releaseMicStream();
-          } else if (event.error === 'network') {
-            setRecognitionError('Netwerkfout: Controleer internet verbinding');
-          } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-            setRecognitionError(`Speech recognition error: ${event.error}`);
-          }
-        };
-
-        // Handle continuous recordings and natural pauses elegantly via automatic resume restarts
-        rec.onend = () => {
-          // Safe commit of the final text block of the ended session before launching next chunk
-          if (sessionFinalTextRef.current) {
-            setSpokenHistory(prev => {
-              const nextHistory = [prev, sessionFinalTextRef.current].filter(Boolean).join(' ');
-              return nextHistory;
-            });
-            setSessionFinalText('');
-          }
-          setSessionInterimText('');
-          setInterimOutput('');
-
-          // Automatically recreate a FRESH SpeechRecognition session immediately after a pause or browser timeout trigger
-          if (phaseRef.current === 'recording' && !isMutedRef.current && !isManuallyStoppedRef.current) {
-            setTimeout(() => {
-              startSpeechEngine();
-            }, 50);
-          }
-        };
-
-        recognitionRef.current = rec;
+      if (recognitionRef.current) {
         try {
-          rec.start();
-        } catch (err) {
-          console.error('Failed to start SpeechRecognition engine:', err);
+          recognitionRef.current.onend = null;
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = activeLangCodeRef.current;
+
+      rec.onresult = (event: any) => {
+        // FIX: Only process results from the CURRENT session (since resultIndex),
+        // then combine with committed history via the ref (never stale).
+        let sessionFinal = '';
+        let sessionInterim = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const text = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            // FIX: Accumulate finals within this session run
+            sessionFinal += (sessionFinal ? ' ' : '') + text;
+          } else {
+            sessionInterim += (sessionInterim ? ' ' : '') + text;
+          }
+        }
+
+        // FIX: Also collect ALL finals from this session (not just new ones)
+        // by scanning from 0 to build the full in-session final string
+        let fullSessionFinal = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            const text = event.results[i][0].transcript;
+            fullSessionFinal += (fullSessionFinal ? ' ' : '') + text;
+          }
+        }
+
+        setInterimOutput(sessionInterim);
+
+        // FIX: Combine committed history (ref, always fresh) + current session finals
+        const currentFullRaw = [spokenHistoryRef.current, fullSessionFinal]
+          .filter(Boolean)
+          .join(' ');
+
+        setRawTranscription(currentFullRaw);
+
+        // Apply moderation inline using refs (always fresh values)
+        const { censored, matches } = runModerationFilter(
+          currentFullRaw,
+          customBlockedWordsRef.current,
+          moderationActionRef.current
+        );
+        setTranscription(censored);
+        setProfanityMatches(matches);
+
+        if (sessionInterim) {
+          const { censored: censoredInterim } = runModerationFilter(
+            sessionInterim,
+            customBlockedWordsRef.current,
+            moderationActionRef.current
+          );
+          setModeratedInterim(censoredInterim);
+        } else {
+          setModeratedInterim('');
         }
       };
 
-      startSpeechEngine();
-    } else {
-      console.warn('Browser SpeechRecognition not natively supported.');
-      setTranscription('Speech recognition wordt niet optimaal ondersteund in deze browser, maar we slaan je feedback wel op!');
-    }
-  }, [activeLangCode, runModerationFilter]);
+      rec.onerror = (event: any) => {
+        console.error('Speech recognition error event:', event.error);
+        
+        if (event.error === 'not-allowed') {
+          setRecognitionError('Microfoon toegang geweigerd');
+          setPhase('ask');
+          releaseMicStream();
+        } else if (event.error === 'network') {
+          setRecognitionError('Netwerkfout: Controleer internet verbinding');
+        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          setRecognitionError(`Speech recognition error: ${event.error}`);
+        }
+      };
 
-  // Clean initialization reset for a fresh start or replay
+      rec.onend = () => {
+        // FIX: Commit finals synchronously into the ref BEFORE scheduling restart.
+        // This eliminates the race condition where the new engine reads a stale ref.
+        const currentFullRaw = rawTranscriptionRef.current;
+        if (currentFullRaw) {
+          spokenHistoryRef.current = currentFullRaw;
+          setSpokenHistoryDisplay(currentFullRaw); // triggers re-render if needed
+        }
+
+        setInterimOutput('');
+        setModeratedInterim('');
+
+        if (phaseRef.current === 'recording' && !isMutedRef.current && !isManuallyStoppedRef.current) {
+          // FIX: No setTimeout needed; ref is already updated synchronously above
+          startSpeechEngine();
+        }
+      };
+
+      recognitionRef.current = rec;
+      try {
+        rec.start();
+      } catch (err) {
+        console.error('Failed to start SpeechRecognition engine:', err);
+      }
+    };
+
+    startSpeechEngine();
+  }, [runModerationFilter]);
+
+  // FIX: Keep a ref of rawTranscription so onend can read its latest value synchronously
+  const rawTranscriptionRef = useRef('');
+  useEffect(() => {
+    rawTranscriptionRef.current = rawTranscription;
+  }, [rawTranscription]);
+
   const startFreshRecording = () => {
-    setSpokenHistory('');
-    setSessionFinalText('');
-    setSessionInterimText('');
+    // FIX: Reset the ref synchronously before starting
+    spokenHistoryRef.current = '';
+    setSpokenHistoryDisplay('');
     setRawTranscription('');
+    rawTranscriptionRef.current = '';
     setTranscription('');
     setInterimOutput('');
+    setModeratedInterim('');
     setProfanityMatches([]);
     setTimeLeft(30);
     startRecording();
   };
 
-  // Pause or Mute logic
   const toggleMute = () => {
     if (isMuted) {
-      // Unmute & Resume
       setIsMuted(false);
+      isMutedRef.current = false;
       soundManager.play('SUCCESS', 0.2);
       isManuallyStoppedRef.current = false;
-      startRecording();
+      // FIX: Reuse the existing stream — no new getUserMedia needed
+      startRecording(micStreamRef.current ?? undefined);
     } else {
-      // Mute/Pause
       setIsMuted(true);
+      isMutedRef.current = true;
       isManuallyStoppedRef.current = true;
       if (recognitionRef.current) {
         try {
-          recognitionRef.current.onend = null; // Detach to avoid restart loops
-          // Commit finalized session part before disconnecting
-          if (sessionFinalText) {
-            setSpokenHistory(prev => [prev, sessionFinalText].filter(Boolean).join(' '));
-            setSessionFinalText('');
-          }
+          recognitionRef.current.onend = null;
           recognitionRef.current.stop();
         } catch (e) {}
       }
-      setSessionInterimText('');
       setInterimOutput('');
+      setModeratedInterim('');
     }
   };
 
-  // Submit and fire off Gemini AI moderation
   const triggerSubmit = async () => {
     isManuallyStoppedRef.current = true;
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.onend = null; // Detach to avoid restarts
+        recognitionRef.current.onend = null;
         recognitionRef.current.stop();
       } catch (e) {}
     }
     releaseMicStream();
 
     if (!rawTranscription.trim()) {
-      // No input, skip directly
       setStep('social');
       return;
     }
 
-    // Trigger AI loading screen
     setPhase('ai_review');
     setAiPolishing(true);
     soundManager.play('SUCCESS', 0.5);
@@ -582,7 +586,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
       setAiResult(moderationAnalysis);
     } catch (err) {
       console.error('Gemini Moderation API error:', err);
-      // Fallback
       setAiResult({
         refinedText: transcription || rawTranscription,
         toxic: profanityMatches.length > 0,
@@ -595,7 +598,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     }
   };
 
-  // Confirm final audited text & store inside Firestore
   const finishReviewAndContinue = async () => {
     const finalFeedbackText = aiResult?.refinedText || transcription || rawTranscription;
 
@@ -609,26 +611,22 @@ export const VoiceFeedbackScreen: React.FC = () => {
     }
 
     try {
-      await setDoc(doc(db, 'sessions', sessionId), {
+      saveSessionData({
+        sessionId,
         voice_feedback: finalFeedbackText,
         voice_feedback_original: rawTranscription,
         voice_feedback_language: aiResult?.language || activeLangCode,
         voice_feedback_moderation_toxic: aiResult?.toxic || profanityMatches.length > 0,
-        voice_feedback_timestamp: Date.now()
-      }, { merge: true });
+        voice_feedback_timestamp: Date.now(),
+        timestamp: Date.now(),
+      });
       
-      // Trigger background sync to Google Sheets
-      triggerAutomaticGoogleSheetsSync();
+      await triggerAutomaticGoogleSheetsSync();
     } catch (error: any) {
-      if (error.code === 'unavailable') {
-        console.warn('Firestore is temporarily offline. Changes stored locally.');
-      } else {
-        handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
-      }
+      console.warn('Lokale sessieopslag of Sheets-sync mislukt:', error);
     }
   };
 
-  // Add custom blocked word helper
   const addBlockedWord = () => {
     const word = newWordInput.trim().toLowerCase();
     if (word && !customBlockedWords.includes(word)) {
@@ -642,11 +640,12 @@ export const VoiceFeedbackScreen: React.FC = () => {
     setCustomBlockedWords(prev => prev.filter(w => w !== wordToRemove));
   };
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
+      isManuallyStoppedRef.current = true;
       if (recognitionRef.current) {
         try {
+          recognitionRef.current.onend = null;
           recognitionRef.current.stop();
         } catch (e) {}
       }
@@ -654,7 +653,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     };
   }, []);
 
-  // Time counting rule
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (phase === 'recording' && !isMuted && timeLeft > 0) {
@@ -671,7 +669,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     return () => clearInterval(timer);
   }, [phase, isMuted, timeLeft]);
 
-  // Auto progression after thank you
   useEffect(() => {
     if (phase === 'thanks') {
       const timeout = setTimeout(() => {
@@ -681,26 +678,24 @@ export const VoiceFeedbackScreen: React.FC = () => {
     }
   }, [phase, setStep]);
 
-  // Restart speech recognition on active language change
   const handleLanguageChange = (code: string) => {
     setActiveLangCode(code);
+    activeLangCodeRef.current = code;
     soundManager.play('SUCCESS', 0.2);
     if (phase === 'recording') {
-      // Temporarily restart with new locale
       if (recognitionRef.current) {
         try {
-          recognitionRef.current.stop();
+          recognitionRef.current.onend = null;
+          recognitionRef.current.abort();
         } catch (e) {}
       }
-      setTimeout(() => {
-        startRecording();
-      }, 100);
+      // FIX: Pass existing stream to avoid re-requesting mic permission
+      startRecording(micStreamRef.current ?? undefined);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 overflow-y-auto relative bg-[#030303] text-white">
-      {/* Decorative background gradients */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-brand/10 blur-[130px] rounded-full opacity-30 animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[450px] h-[450px] bg-red-800/5 blur-[130px] rounded-full opacity-20" />
       
@@ -721,18 +716,18 @@ export const VoiceFeedbackScreen: React.FC = () => {
               Wil je nog <br /><span className="text-brand">extra feedback</span> geven?
             </h1>
             <p className="text-xl text-white/40 mb-12 max-w-xl mx-auto font-light leading-relaxed">
-              Deel je mening via je stem. Onze Geavanceerde AI analyseert en verfijnt je spraak in real time. Dit helpt ons de VanBeresteyn ervaring te verrijken!
+              Deel je mening via je stem. Praat voor 30 seconden in de microfoon. Dit helpt ons de ervaring van vanBeresteyn te verrijken!
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-6 justify-center max-w-lg mx-auto">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center max-w-xl mx-auto">
               <InteractiveButton 
                 onClick={startFreshRecording}
                 className="px-10 py-5 glass-red rounded-full group overflow-hidden relative min-w-[240px] shadow-[0_0_20px_rgba(255,80,80,0.1)]"
               >
-                <div className="relative z-10 flex items-center justify-center gap-3">
+                <div className="relative z-20 flex items-center justify-center gap-3">
                   <Mic className="w-5 h-5 group-hover:scale-110 transition-transform text-white" />
-                  <span className="text-brand group-hover:text-white transition-colors font-display font-bold uppercase tracking-widest text-sm">
-                    {recognitionError ? 'Opnieuw proberen' : 'Ja, ik spreek in'}
+                  <span className="text-brand group-hover:text-white transition-colors font-display font-bold uppercase tracking-widest text-l">
+                    {recognitionError ? 'Opnieuw proberen' : 'Feedback geven'}
                   </span>
                 </div>
               </InteractiveButton>
@@ -768,7 +763,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             className="w-full max-w-5xl px-6 py-8 relative z-10 flex flex-col items-center"
           >
-            {/* Header / Language Selection */}
             <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 mb-12 border-b border-white/5 pb-8">
               <div className="flex items-center gap-4">
                 <div className="px-4 py-2 bg-brand/10 border border-brand/20 rounded-full flex items-center gap-2.5">
@@ -781,7 +775,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   </span>
                 </div>
                 
-                {/* Real-time word match warnings */}
                 {profanityMatches.length > 0 && (
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -796,7 +789,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 )}
               </div>
 
-              {/* Language switcher */}
               <div className="flex items-center gap-3">
                 <Globe className="w-4 h-4 text-white/30" />
                 <div className="flex bg-white/[0.03] border border-white/5 p-1 rounded-full">
@@ -819,10 +811,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Spektrum, Counter, Visualizers */}
             <div className="mb-8 relative flex flex-col items-center">
               <div className="relative inline-block mb-3">
-                {/* Concentric pulsing back-glowing rings for active listener feedback */}
                 {!isMuted && (
                   <>
                     <div
@@ -850,16 +840,13 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Volume spectrum visualizer */}
               <AudioVisualizer stream={micStream} isMuted={isMuted} />
             </div>
 
-            {/* Real-time Transcription Screen */}
             <div className={cn(
               "glass w-full min-h-[220px] p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden group shadow-3xl bg-white/[0.01] border transition-all duration-500 flex flex-col justify-between",
               profanityMatches.length > 0 && moderationAction === 'warn' ? "border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.05)]" : "border-brand/15"
             )}>
-              {/* Dynamic top-edge remaining time indicator line */}
               <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
                 <motion.div 
                   initial={{ width: "100%" }}
@@ -874,12 +861,16 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
               <div className="max-h-[260px] overflow-y-auto custom-scrollbar flex items-center justify-center py-6">
                 <p className="text-2xl md:text-3xl text-white font-light text-center leading-relaxed">
-                  {transcription ? renderHighlightedText(transcription) : <span className="opacity-20 italic font-mono text-lg uppercase tracking-widest">Spreek je gedachten in...</span>}
-                  {moderatedInterim && <span className="opacity-40 italic"> {renderHighlightedText(moderatedInterim)}</span>}
+                  {transcription
+                    ? renderHighlightedText(transcription)
+                    : <span className="opacity-20 italic font-mono text-lg uppercase tracking-widest">Spreek je gedachten in...</span>
+                  }
+                  {moderatedInterim && (
+                    <span className="opacity-40 italic"> {renderHighlightedText(moderatedInterim)}</span>
+                  )}
                 </p>
               </div>
 
-              {/* Floating Match Warning alerts */}
               {profanityMatches.length > 0 && (
                 <div className="border-t border-white/5 mt-6 pt-4 flex flex-wrap gap-2.5 items-center justify-center">
                   <span className="text-[10px] text-white/30 font-mono uppercase tracking-widest">Gefilterd:</span>
@@ -901,9 +892,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
               )}
             </div>
 
-            {/* Quick Actions & Settings Trigger */}
             <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 mt-10">
-              {/* Option toggle trigger */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
@@ -917,7 +906,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 <span>Filters & Moderatie Instellen</span>
               </button>
 
-              {/* Main recording control buttons */}
               <div className="flex gap-4">
                 <InteractiveButton 
                   onClick={toggleMute}
@@ -955,7 +943,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Slid-open Custom Filters Panel */}
             <AnimatePresence>
               {showFilters && (
                 <motion.div
@@ -979,7 +966,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   </h3>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Action Choices */}
                     <div>
                       <h4 className="text-xs uppercase tracking-widest text-white/30 font-bold mb-4 flex items-center gap-2">
                         <Shield className="w-3.5 h-3.5 text-brand" />
@@ -1027,7 +1013,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Custom Block List configuration */}
                     <div>
                       <h4 className="text-xs uppercase tracking-widest text-white/30 font-bold mb-4 flex items-center gap-2">
                         <Settings className="w-3.5 h-3.5 text-brand" />
@@ -1078,7 +1063,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
           </motion.div>
         )}
 
-        {/* AI-backed Review Phase */}
         {phase === 'ai_review' && (
           <motion.div
             key="ai_review"
@@ -1110,7 +1094,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col gap-8 shadow-3xl bg-white/[0.01] rounded-[3rem] p-8 md:p-12 border border-brand/20 relative overflow-hidden"
               >
-                {/* Decorative scanning line */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-white/5 overflow-hidden">
                   <motion.div 
                     animate={{ left: ['-100%', '100%'] }}
@@ -1130,7 +1113,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Safety output pill status */}
                   {aiResult?.toxic ? (
                     <div className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full flex items-center gap-2.5 shadow-md font-mono text-[10px] uppercase font-bold tracking-widest">
                       <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -1144,9 +1126,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   )}
                 </div>
 
-                {/* Compare Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
-                  {/* Spoken feedback */}
                   <div className="flex flex-col gap-2.5">
                     <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest font-bold">
                       Originele Opname
@@ -1156,7 +1136,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Polished Speech */}
                   <div className="flex flex-col gap-2.5">
                     <span className="text-[10px] font-mono text-brand uppercase tracking-widest font-black">
                       Gepolijste Feedback (Gemini AI)
@@ -1167,7 +1146,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Warn explanation if appropriate words found */}
                 {aiResult?.blockedWordsDetected && aiResult.blockedWordsDetected.length > 0 && (
                   <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-2xl mt-2 flex items-start gap-3">
                     <AlertTriangle className="text-amber-500 w-5 h-5 min-w-[20px] mt-0.5" />
@@ -1182,11 +1160,13 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   </div>
                 )}
 
-                {/* Confirmation Footer options */}
                 <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-end">
                   <InteractiveButton
                     onClick={() => {
+                      spokenHistoryRef.current = '';
+                      setSpokenHistoryDisplay('');
                       setRawTranscription('');
+                      rawTranscriptionRef.current = '';
                       setTranscription('');
                       setTimeLeft(30);
                       startRecording();
@@ -1233,11 +1213,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-4 text-white/5 font-mono text-[9px] uppercase tracking-[0.6em] font-black">
-        <BrainCircuit className="w-4 h-4 opacity-50 text-brand" />
-        <span>Audio AI Analyse Actief</span>
-      </div>
     </div>
   );
 };

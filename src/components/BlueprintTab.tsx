@@ -9,66 +9,54 @@ import { InteractiveButton } from './InteractiveButton';
 
 // Copyable Code snippets for reference in UI
 const CODE_SNIPPETS = {
-  frontend_sync: `// Website 1 (Frontend) - Live Subscription to results
-import { db } from './firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+  frontend_sync: `// Website 1 (Frontend) - Local state sync with Google Sheets
+import { loadSessionFromLocalStorage } from '../lib/sessionStorage';
+import { GoogleSheetsSync } from '../services/googleSheetsService';
 
-export function listenToActiveSession(sessionId, onUpdated) {
-  const docRef = doc(db, 'sessions', sessionId);
-  
-  // Real-time subscription triggers the callback instantly when Website 2 writes data
-  return onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      onUpdated(docSnap.data());
-    }
-  });
-}`,
+export async function syncSession(sessionId, sessionData) {
+  localStorage.setItem('activeSession', JSON.stringify(sessionData));
+  await GoogleSheetsSync.writeSession(sessionId, sessionData);
+}
+
+export function listenToSessionUpdates(onUpdated) {
+  const payload = loadSessionFromLocalStorage();
+  if (payload) {
+    onUpdated(payload);
+  }
+  // Optionally poll or refresh from Sheets if needed.
+}
+`,
   backend_endpoint: `// Website 2 (Backend) - Fast Update & AI triggers Express route
 import express from 'express';
-import { getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
+import { updateGoogleSheet } from './googleSheetsService';
 
 const app = express();
-const db = getFirestore();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/api/sessions/:id/recalibrate', async (req, res) => {
   const { id } = req.params;
   const { sliderValues } = req.body;
-  
+
   try {
-    // Fire Gemini to categorize dynamic user behavior
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: \`Categorize rating: \${JSON.stringify(sliderValues)}\`
     });
-    
-    const archetype = response.text || "Cosmic Visionary";
-    
-    // Write back. Website 1's live listeners will automatically update!
-    await db.collection('sessions').doc(id).set({
-      sliderValues,
-      archetype,
-      updatedAt: Date.now()
-    }, { merge: true });
-    
+
+    const archetype = response.text || 'Cosmic Visionary';
+
+    await updateGoogleSheet(id, { sliderValues, archetype, updatedAt: Date.now() });
     res.json({ status: 'success', archetype });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });`,
-  security_rules: `// Real-Time Firebase Security Settings
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /sessions/{sessionId} {
-      // Allow users to update their own ratings, but lock completed items
-      allow read, create: if true;
-      allow update: if request.resource.data.completed != true;
-      allow delete: if request.auth != null && request.auth.token.admin == true;
-    }
-  }
-}`
+  security_rules: `// Google Sheets & OAuth access guidance
+# Use OAuth 2.0 scopes to restrict access to the target spreadsheet
+# Only the signed-in user or service account should have write permissions.
+# Avoid exposing full drive access by limiting scopes to sheets.readonly or sheets.
+`
 };
 
 export const BlueprintTab: React.FC = () => {
@@ -303,7 +291,7 @@ export const BlueprintTab: React.FC = () => {
                     )}
                   </div>
                   <ArrowRight className="w-5 h-5 text-white/20 rotate-90 lg:rotate-0" />
-                  <span className="text-[9px] font-mono text-emerald-500/80 uppercase font-black tracking-widest">Firestore Live</span>
+                  <span className="text-[9px] font-mono text-emerald-500/80 uppercase font-black tracking-widest">Sheet Sync</span>
                 </div>
               </div>
 
@@ -319,7 +307,7 @@ export const BlueprintTab: React.FC = () => {
                   </div>
 
                   <p className="text-white/40 text-xs leading-relaxed mb-4 font-sans">
-                    Actuele overdracht monitoring. Elke actie van Website 1 wordt zonder verversen verwerkt door en teruggestuurd via Firestore.
+                    Actuele overdracht monitoring. Elke actie van Website 1 wordt opgeslagen in lokale sessie-opslaan en gesynchroniseerd met Google Sheets.
                   </p>
 
                   <div className="bg-black border border-white/[0.05] rounded-2xl p-4 h-64 overflow-y-auto font-mono text-[10px] space-y-3 pr-2 scrollbar-thin">
@@ -383,17 +371,17 @@ export const BlueprintTab: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Firestore Cloud Layer */}
+                {/* Google Sheets Sync Layer */}
                 <div className="bg-[#0b0c10] border border-brand/20 rounded-3xl p-8 relative flex flex-col gap-4 ring-2 ring-brand/10">
                   <div className="w-12 h-12 rounded-2xl bg-brand/20 border border-brand/30 flex items-center justify-center text-white">
                     <Database className="w-5 h-5 text-brand" />
                   </div>
-                  <h4 className="text-lg font-bold uppercase text-white font-display">Cloud Firestore</h4>
+                  <h4 className="text-lg font-bold uppercase text-white font-display">Google Sheets Sync</h4>
                   <ul className="space-y-2 text-xs text-white/50 font-mono">
-                    <li>• Shared WebSocket Layer</li>
-                    <li>• Millisecond syncing latency</li>
-                    <li>• Managed Real-Time Channels</li>
-                    <li>• Document: sessions/:sessionId</li>
+                    <li>• Central session spreadsheet</li>
+                    <li>• Sheet-based data pipe</li>
+                    <li>• OAuth-backed access control</li>
+                    <li>• Row/column session records</li>
                   </ul>
                   <div className="text-[10px] font-mono text-emerald-500 font-black tracking-widest mt-4 uppercase">
                     👥 STREAMS UPDATES TO BOTH
@@ -490,15 +478,15 @@ export const BlueprintTab: React.FC = () => {
                     <li className="flex gap-3 text-xs text-white/70">
                       <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                       <div>
-                        <strong className="block text-white">Gedeelde Firestore Database</strong>
-                        Zet één Firebase-instantie op en configureer deze in beide repositories met dezelfde inloggegevens.
+                        <strong className="block text-white">Gedeelde Google Sheet</strong>
+                        Gebruik één gedeelde spreadsheet als centraal sessielogboek met Google OAuth-beveiliging.
                       </div>
                     </li>
                     <li className="flex gap-3 text-xs text-white/70">
                       <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                       <div>
-                        <strong className="block text-white">Zet Client-side onSnapshot Listeners op</strong>
-                        Gebruik de real-time listener SDK van Firebase om op beide websites live naar collectiewijzigingen te luisteren.
+                        <strong className="block text-white">Zet client-side sync in</strong>
+                        Gebruik lokale opslag en Google Sheets synchronisatie om sessiestatussen te delen tussen schermen.
                       </div>
                     </li>
                     <li className="flex gap-3 text-xs text-white/70">
@@ -528,8 +516,8 @@ export const BlueprintTab: React.FC = () => {
                     <li className="flex gap-3 text-xs text-white/70">
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                       <div>
-                        <strong className="block text-white">Voeg Beveiligingsregels (Rules) Toe</strong>
-                        Configureer Firestore-regels zodat onbevoegden geen data kunnen overschrijven of verwijderen.
+                        <strong className="block text-white">Beperk OAuth-toegang</strong>
+                        Beperk Google Sheets-scope en maak alleen de specifieke spreadsheet schrijfbaar voor de app.
                       </div>
                     </li>
                     <li className="flex gap-3 text-xs text-white/70">

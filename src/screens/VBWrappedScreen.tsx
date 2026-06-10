@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { saveSessionData } from '../lib/sessionStorage';
 import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 import { 
   X, 
@@ -60,10 +59,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
   } = useStore();
 
   useEffect(() => {
-    // Save session data to Firestore on load
-    const saveSessionData = async () => {
+    // Save session data locally on load
+    const saveSessionDataLocally = async () => {
       try {
-        await setDoc(doc(db, 'sessions', sessionId), {
+        saveSessionData({
           sessionId,
           genres: selectedGenres,
           answers,
@@ -73,15 +72,15 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           timestamp: Date.now(),
           completed: true,
           thanked: true
-        }, { merge: true });
+        });
         
         // Trigger automatic Google Sheets sync in background
-        triggerAutomaticGoogleSheetsSync();
+        await triggerAutomaticGoogleSheetsSync();
       } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
+        console.warn('Lokale sessieopslag mislukt:', error);
       }
     };
-    saveSessionData();
+    saveSessionDataLocally();
 
     // Smart idle reset timeout: restarts the experience if no activity is detected for 90 seconds
     let idleTimeout: NodeJS.Timeout;
@@ -513,14 +512,12 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           </div>
 
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tight leading-none mb-4 text-white">
-            MIJN TIENER <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-rose-400 to-yellow-400">
-              VIBE WRAPPED
+              Mijn Wrapped Verhaal
             </span>
           </h2>
           <p className="text-white/60 text-sm mb-8 leading-relaxed max-w-xs">
-            Zie in real-time welk cultuur-profiel en welke prestaties je hebt ontgrendeld tijdens je calibratie-sessie!
-          </p>
+          Bekijk wat jij interessant vind!          </p>
 
           <div className="flex flex-col gap-2.5 w-full">
             <button

@@ -3,18 +3,17 @@ import { motion } from 'motion/react';
 import { useStore } from '../store';
 import { CheckCircle2, ArrowRight, BrainCircuit } from 'lucide-react';
 import { InteractiveButton } from '../components/InteractiveButton';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { saveSessionData } from '../lib/sessionStorage';
 import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
 export const FeedbackThanksScreen: React.FC = () => {
   const { setStep, sessionId, selectedGenres, answers, ageGroup } = useStore();
 
   useEffect(() => {
-    // Save the interaction data as "completed"
+    // Save the interaction data locally as completed
     const saveProgress = async () => {
       try {
-        await setDoc(doc(db, 'sessions', sessionId), {
+        saveSessionData({
           sessionId,
           genres: selectedGenres,
           answers,
@@ -22,12 +21,12 @@ export const FeedbackThanksScreen: React.FC = () => {
           timestamp: Date.now(),
           completed: true,
           feedback_received: true
-        }, { merge: true });
-        
+        });
+
         // Trigger automatic Google Sheets sync in background
-        triggerAutomaticGoogleSheetsSync();
+        await triggerAutomaticGoogleSheetsSync();
       } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `sessions/${sessionId}`);
+        console.warn('Lokale sessieopslag mislukt:', error);
       }
     };
     saveProgress();
@@ -54,11 +53,11 @@ export const FeedbackThanksScreen: React.FC = () => {
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl font-display font-bold uppercase mb-6 tracking-tight">
-          Bedankt voor <span className="text-brand">jouw feedback</span>
+          Bedankt voor <span className="text-brand"><br></br>je feedback</span>
         </h1>
 
         <p className="text-xl text-white/60 mb-16 max-w-xl mx-auto font-light leading-relaxed">
-          Jouw antwoorden zijn succesvol geanalyseerd en opgeslagen in ons netwerk. We waarderen je bijdrage aan de culturele transitie.
+          Je antwoorden zijn succesvol geanalyseerd en opgeslagen in ons netwerk.
         </p>
 
         <motion.div 
@@ -77,13 +76,7 @@ export const FeedbackThanksScreen: React.FC = () => {
               </span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-500" />
             </div>
-            <div className="absolute inset-0 bg-brand/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
           </InteractiveButton>
-
-          <div className="flex items-center gap-3 text-white/20 font-mono text-[9px] uppercase tracking-[0.5em] font-black">
-            <BrainCircuit className="w-4 h-4" />
-            <span>DNA Analyse Voltooid</span>
-          </div>
         </motion.div>
       </motion.div>
     </div>
