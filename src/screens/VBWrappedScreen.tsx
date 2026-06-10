@@ -286,6 +286,8 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       })(),
       isSlider: true,
     },
+
+    //HIER ZIJN WE NUUUUUUUU//
     {
       id: 'immersion',
       label: 'Zintuiglijke Immersie',
@@ -297,10 +299,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       badgeColor: (answers['immersion'] ?? 50) > 60 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : (answers['immersion'] ?? 50) < 40 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
       insight: (() => {
         const val = answers['immersion'] ?? 50;
-        if (!hasAnswers) return 'Calibreer de immersieslider om je zintuiglijke behoeften te mappen.';
-        if (val > 60) return 'Grootse honger naar VR-immersie en 3D audio-cinema; je wilt fysiek midden in de reviews staan.';
-        if (val < 40) return 'Je houdt van een relaxte consumptie: ontspannen toekijken zonder actieve inspanning.';
-        return 'Je beleeft content graag met gezonde afstand, zonder de grip op de realiteit te verlegen.';
+        if (!hasAnswers) return 'Verplaats de immersieslider om aan te geven hoeveel beleving en onderdompeling jij zoekt in films, series of andere media.';
+        if (val > 60) return 'Je zoekt maximale beleving. VR, 3D-audio en meeslepende ervaringen spreken jou aan, omdat je het gevoel wilt hebben dat je zelf midden in het verhaal staat.';
+        if (val < 40) return 'Je kijkt het liefst ontspannen naar content zonder er veel moeite voor te hoeven doen. Gewoon achteroverleunen, genieten en het verhaal op je af laten komen.';
+        return 'Je geniet van films, series en andere content, maar houdt graag een gezonde afstand. Je hoeft niet volledig op te gaan in de ervaring; het kijken zelf is voor jou al genoeg.';
       })(),
       isSlider: true,
     },
@@ -315,10 +317,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       badgeColor: (answers['social'] ?? 50) > 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : (answers['social'] ?? 50) < 40 ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' : 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
       insight: (() => {
         const val = answers['social'] ?? 50;
-        if (!hasAnswers) return 'Teken hier je sociale voorkeuren op de schaal.';
-        if (val > 60) return 'Altijd op zoek naar bioscoopuitjes met het squadron, gezamenlijke groepschats en multiplayer-ervaringen.';
-        if (val < 40) return 'Ervaar je cultuur en reviews liever op je eigen tempo in een afgesloten, persoonlijke bubble.';
-        return 'Kan genieten van uitstapjes met het squadron, maar evenzeer van een meeslepende solo-sessie.';
+        if (!hasAnswers) return 'Gebruik de schaal om aan te geven hoe sociaal jij het liefst van content geniet. Of je nu graag samen kijkt of juist liever alleen, jouw voorkeur bepaalt de ervaring.';
+        if (val > 60) return 'Je beleeft entertainment het liefst samen met anderen. Bioscoopuitjes, groepschats en gedeelde ervaringen maken voor jou alles leuker.';
+        if (val < 40) return 'Je ontdekt films, series en andere content het liefst op je eigen tempo. In je eigen omgeving kun je rustig genieten en zelf bepalen wat je kijkt en wanneer.';
+        return 'Je vindt het leuk om samen met anderen van entertainment te genieten, maar kunt net zo goed helemaal opgaan in een solo-kijksessie. Voor jou is het de afwisseling die het leuk maakt.';
       })(),
       isSlider: true,
     },
@@ -333,10 +335,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       badgeColor: (answers['breaks'] ?? 50) > 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : (answers['breaks'] ?? 50) < 40 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
       insight: (() => {
         const val = answers['breaks'] ?? 50;
-        if (!hasAnswers) return 'Geef je reflectiebehoefte een score op je wrapped deck.';
-        if (val > 60) return 'Je hunkert naar nadenkpauzes, reflectie-intervallen en diepe stilte tussen scènes door.';
-        if (val < 40) return 'Jij houdt van direct doorrazen! Een continue stroom van flitsende scènes zonder interrupts.';
-        return 'Je waardeert af en toe een rustmomentje om beelden te verwerken, maar wilt de vaart erin houden.';
+        if (!hasAnswers) return 'Geef aan hoeveel waarde jij hecht aan reflectie en verdieping. Zo kunnen de resultaten beter aansluiten bij de manier waarop jij content beleeft en verwerkt.';
+        if (val > 60) return 'Je houdt van verhalen die je aan het denken zetten. Momenten van rust, verdieping en reflectie maken voor jou vaak net zoveel indruk als de actie zelf.';
+        if (val < 40) return 'Je houdt van tempo en actie. Het liefst kijk je naar content die blijft doorgaan, met snelle scènes en weinig momenten waarop het verhaal stilvalt.';
+        return 'Je houdt van een fijne mix tussen actie en rust. Korte momenten om even alles te verwerken zijn welkom, zolang het verhaal daarna weer lekker vaart maakt.';
       })(),
       isSlider: true,
     },
@@ -434,7 +436,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         title: 'Ontgrendel Je Sfeer-Aanbeveling',
         type: 'Sfeer-Matched',
         icon: '🧬',
-        desc: 'Kies een sfeergenre in de live-console om direct opgedane, specifieke videotips te matchen.'
+        desc: 'Kies een genre dat bij jouw stemming past. Op basis daarvan krijg je direct videotips die aansluiten bij jouw smaak en interesses.'
       });
     }
 
@@ -449,15 +451,17 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         title: 'Co-op Groepschats & Live Discussies',
         type: 'Voorkeur-Tuning',
         icon: '👥',
-        desc: 'Jouw sociale behoefte is sterk aanwezig! Organiseer met vrienden live video-beoordelingen of groeps-sessies.'
+        desc: 'Jij geniet het meest van entertainment samen met anderen. Nodig vrienden uit voor een kijkavond, bespreek video\'s in een groepschat of ontdek samen nieuwe favorieten.'
       });
     } else if (immersionVal > 60) {
       list.push({
         title: 'Dolby Atmos Spatial Cinema',
         type: 'Voorkeur-Tuning',
         icon: '🎧',
-        desc: 'Geniet maximaal met spatial audio en meeslepende 3D-VR cinema om de belevingsdiepte volledig tot haar recht te laten komen.'
+        desc: 'Voor jou draait alles om de ervaring. Met spatial audio, VR en andere meeslepende technieken haal je nog meer uit films en video\'s en voelt het alsof je er zelf middenin zit.'
       });
+
+      //IK BEN NU HIER//
     } else if (durationVal < 40) {
       list.push({
         title: 'Shortform Vlog-Highlights',

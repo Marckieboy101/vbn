@@ -1,7 +1,0 @@
-To have your uploaded blonde avatar video (or any custom introduction video) play automatically in the application:
-
-1. Rename your local video file to exactly "intro_video.mp4"
-2. Place it in this exact folder: public/
-3. Rebuild or run the application.
-
-If there is no "intro_video.mp4" file in this folder, the application will automatically fall back to the high-quality cinematic projector film trailer during execution.
