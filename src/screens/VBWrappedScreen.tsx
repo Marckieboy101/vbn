@@ -237,13 +237,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       insight: (() => {
         if (!hasGenre) return 'Kies een sfeer op de console om deze koppeling te leggen.';
         switch (genreId) {
-          case 'comedy': return 'Je zoekt de lach, gein, en pure memes. Jouw sfeer is gecentreerd rondom humor en vrolijkheid.';
+          case 'comedy': return 'Je houdt van lachen, grappige momenten en goede memes. Alles draait voor jou om plezier, humor en een gezellige sfeer.';
           case 'sports': return 'Je houdt van actie, adrenaline en competitieve sporten of online toernooien.';
-          case 'thriller': return 'Je bent geboeid door onheilspellende mysteries, donkere hoeken en vlijmscherpe suspense.';
-          case 'adventure': return 'Grenzeloze verkenningen, reizen en epische context zijn jouw favoriete landschappen.';
-          case 'romance': return 'Emotionele verhaallijnen, milde tonen en warme interpersoonlijke verbindingen hebben jouw voorkeur.';
-          case 'scifi': return 'Diep gedompeld in futuristische dromen, cybernetics en speculatieve technologie-universums.';
-          default: return 'Je bent momenteel ingesteld op een neutraal cultuuras.';
+          case 'thriller': return 'Je houdt van spannende mysteries, donkere verhalen en momenten waarbij je op het puntje van je stoel zit. Alles wat een beetje mysterieus of spannend is, trekt jouw aandacht.';
+          case 'adventure': return 'Je houdt van avontuur, nieuwe plekken ontdekken en verhalen die je meenemen naar andere werelden. Reizen, vrijheid en bijzondere ervaringen geven jou energie.';
+          case 'romance': return 'Je houdt van persoonlijke verhalen, oprechte emoties en warme momenten tussen mensen. Verhalen die raken en een goed gevoel achterlaten spreken jou het meest aan.';
+          case 'scifi': return 'Je bent gek op futuristische werelden, slimme technologie en ideeën over hoe de toekomst eruit zou kunnen zien. Verhalen over innovatie, AI en high-tech ontwikkelingen trekken meteen jouw aandacht.';
+          default: return 'Je hebt geen uitgesproken voorkeur voor een bepaalde cultuur of stijl. Je staat open voor allerlei invloeden, verhalen en ervaringen uit verschillende hoeken van de wereld.';
         }
       })(),
       isSlider: false,
@@ -258,12 +258,12 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       badgeText: ageGroup === '12-13' ? 'Young Creator' : ageGroup === '14-15' ? 'Trendsetter' : ageGroup === '16-18' ? 'Connoisseur' : 'VERGRENDELD',
       badgeColor: ageGroup ? 'bg-brand/10 text-brand border-brand/20' : 'bg-white/5 text-white/35 border-white/5',
       insight: (() => {
-        if (!ageGroup) return 'Kies je leeftijd in de eerste stappen om deze ijking te ontsluiten.';
+        if (!ageGroup) return 'Kies eerst je leeftijd om deze functie of persoonlijke afstemming te ontgrendelen. Zodra je je leeftijd hebt ingevuld, kunnen de resultaten beter op jou worden afgestemd.';
         switch (ageGroup) {
-          case '12-13': return 'Perfecte afstemming op creatieve, direct aansprekende en energieke filmconcepten.';
-          case '14-15': return 'Gekalibreerd op grensverleggende thema\'s met een fijne balans tussen adrenaline en herkenbaarheid.';
-          case '16-18': return 'Schijnt licht op diepere cinema, complexe karakters en verfijnde narratieve diepgang.';
-          default: return 'Gekoppeld aan een neutraal ijkprofiel.';
+          case '12-13': return 'Jij houdt van creatieve, energieke en direct pakkende filmideeën die vanaf de eerste minuut je aandacht trekken.';
+          case '14-15': return 'Jij houdt van vernieuwende en verrassende thema’s die spannend zijn, maar tegelijkertijd herkenbaar en toegankelijk blijven.';
+          case '16-18': return 'Jij houdt van diepere cinema, complexe karakters en verfijnde narratieve diepgang.';
+          default: return 'Je voorkeuren zijn momenteel gekoppeld aan een neutraal profiel. Hierdoor krijg je een brede mix van content en aanbevelingen zonder sterke nadruk op een specifieke richting.';
         }
       })(),
       isSlider: false,
@@ -279,10 +279,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       badgeColor: (answers['duration'] ?? 50) > 60 ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : (answers['duration'] ?? 50) < 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20',
       insight: (() => {
         const val = answers['duration'] ?? 50;
-        if (!hasAnswers) return 'Versleep de schuifregelaars om jouw tijdsfocus te meten.';
-        if (val > 60) return 'Je kiest resoluut voor lange bioscoopspeelfilms en epische overzichtelijke verhaallijnen.';
-        if (val < 40) return 'Jouw focus ligt op snackable, snelle media en flitsende verhaalloops zoals TikTok en shorts.';
-        return 'Je schommelt rond een harmonieuze balans tussen korte video\'s en langere producties.';
+        if (!hasAnswers) return 'Sleep de schuifregelaars om te laten zien welke tijdsperiodes jou het meest aanspreken.';
+        if (val > 60) return 'Je kijkt het liefst naar lange films met een meeslepend verhaal dat de tijd krijgt om zich goed te ontwikkelen.';
+        if (val < 40) return 'Je houdt van korte, snelle content die direct de aandacht pakt, zoals TikToks, Shorts en andere snelle video\'s.';
+        return 'Je geniet zowel van korte, snelle video\'s als van langere films en series. Voor jou draait het om een fijne mix van snelle entertainmentmomenten en verhalen waar je echt in kunt opgaan.';
       })(),
       isSlider: true,
     },
