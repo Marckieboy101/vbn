@@ -26,7 +26,7 @@ export const AgeSelectionScreen: React.FC = () => {
       label: 'Young Creators',
       description: 'Nieuwsgierig en creatief. Ontdek de vetste nieuwe filmvrienden en trends.',
       icon: <Smile className="w-8 h-8 text-white" />,
-      bgGradient: 'from-amber-500/20 to-orange-600/10'
+      bgGradient: ''
     },
     {
       id: '14-15',
@@ -34,15 +34,15 @@ export const AgeSelectionScreen: React.FC = () => {
       label: 'Trendsetters',
       description: 'Grensverleggend en energiek. Ervaar actie, humor en meeslepende verhalen.',
       icon: <Rocket className="w-8 h-8 text-white" />,
-      bgGradient: 'from-brand/20 to-purple-600/10'
+      bgGradient: ''
     },
     {
       id: '16-18',
       range: '16 - 18 jaar',
-      label: 'Cinema Connoisseurs',
+      label: 'Cinema Con noisseurs',
       description: 'Rijp en scherpzinnig. Duik dieper in complexe plots en meesterlijke films.',
       icon: <Sparkles className="w-8 h-8 text-white" />,
-      bgGradient: 'from-indigo-500/20 to-blue-600/10'
+      bgGradient: ''
     }
   ];
 
