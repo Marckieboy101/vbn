@@ -9,7 +9,6 @@ import {
   ArrowLeft, 
   Sparkles, 
   Trophy, 
-  Flame, 
   Mic, 
   Cpu, 
   Lock, 
@@ -492,24 +491,8 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       id: 'welcome',
       render: () => (
         <div className="flex flex-col items-center justify-center text-center h-full max-w-lg mx-auto px-4 py-8 relative">
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 animate-bounce">
-            <span className="px-4 py-1.5 rounded-full bg-brand/10 border border-brand/20 font-mono text-[9px] uppercase tracking-widest font-black text-brand">
-              ✨ VANBERESTEYN CO-OP v1.0
-            </span>
-          </div>
 
-          <div className="relative mb-8">
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-              className="w-36 h-36 rounded-full border-2 border-dashed border-brand/35 flex items-center justify-center p-2 relative"
-            >
-              <div className="w-full h-full rounded-full bg-gradient-to-tr from-brand to-red-400 opacity-20 blur-md absolute" />
-            </motion.div>
-            <div className="absolute inset-0 flex items-center justify-center text-5xl">
-              {activeArchetype?.emoji || '🧬'}
-            </div>
-          </div>
+
 
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tight leading-none mb-4 text-white">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-rose-400 to-yellow-400">
@@ -551,11 +534,8 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       render: () => (
         <div className="flex flex-col justify-between h-full px-4 py-8 relative">
           <div className="text-center mt-6">
-            <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
-              STAP 1 // DE EERSTE INTERACTIE
-            </span>
             <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
-              Jouw Initiële <span className="text-brand">Sfeervibe</span>
+              Jouw <span className="text-brand">Interesse</span>
             </h2>
           </div>
 
@@ -579,23 +559,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <p className="text-white/80 text-xs font-light leading-relaxed px-2">
                   "{genreInfo.text}"
                 </p>
-                
-                <div className="mt-6 font-mono text-[9px] uppercase tracking-widest font-black text-black bg-white/80 p-2 rounded-xl inline-block">
-                  SFEER: GELAUNCHED 🚀
                 </div>
-              </div>
             </motion.div>
           ) : (
             <div className="my-auto max-w-sm mx-auto p-8 glass border border-white/5 rounded-3xl text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-white/5 rounded-full border border-white/5 flex items-center justify-center mb-4 text-white/20">
                 <Lock className="w-6 h-6 text-brand/40 animate-pulse" />
               </div>
-              <h3 className="text-sm font-display font-bold uppercase tracking-wider text-white mb-2">
-                Sfeer Nog Niet Gekozen
-              </h3>
-              <p className="text-[11px] text-white/40 leading-relaxed mb-6">
-                Keep exploring to unlock this insight. Ga terug naar de sfeerselectie-gamedisplay om deze te kalibreren!
-              </p>
               <button
                 onClick={() => {
                   soundManager.play('CLICK', 0.3);
@@ -603,14 +573,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 }}
                 className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
               >
-                Kies Sfeer Nu 🧭
+                Kies genre
               </button>
             </div>
           )}
-
-          <div className="text-center text-[10px] text-white/30 font-mono uppercase tracking-widest mb-6">
-            Genres weerspiegelen jouw emotionele startlijn
-          </div>
         </div>
       )
     },
@@ -621,11 +587,11 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         return (
           <div className="flex flex-col justify-between h-full px-4 py-8 relative">
             <div className="text-center mt-6">
-              <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
-                STAP 2 // DE SCHUIFREGELAARS
-              </span>
+              {/* <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
+                STAP 2 // DE SLIDERS
+              </span> */}
               <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
-                Uiterste <span className="text-brand">Meting</span>
+                JOUW <span className="text-brand">VOORKEUREN</span>
               </h2>
             </div>
 
@@ -650,7 +616,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                     {extreme.label}
                   </h3>
                   <p className="text-white/60 text-xs font-light leading-relaxed">
-                    {extreme.desc} Jij houdt niet van halfslachtige keuzes; je stemt met maximale overtuiging!
+                    {extreme.desc} Als jij iets kiest, ga je er helemaal voor.
                   </p>
                 </div>
               </motion.div>
@@ -660,10 +626,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   <Lock className="w-6 h-6 text-brand/40 animate-pulse" />
                 </div>
                 <h3 className="text-sm font-display font-bold uppercase tracking-wider text-white mb-2">
-                  Calibratie Nog Niet Compleet
+                  Bijna daar!
                 </h3>
                 <p className="text-[11px] text-white/40 leading-relaxed mb-6">
-                  Keep exploring to unlock this insight. Beantwoord de schuifregelaars om jouw meest extreme ijkpunten in te ramen!
+                  Blijf ontdekken om deze insight vrij te spelen. Vul de sliders in en ontdek jouw meest extreme voorkeuren!
                 </p>
                 <button
                   onClick={() => {
@@ -672,13 +638,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   }}
                   className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  Start Kalibratie 🧪
+                  Starten
                 </button>
               </div>
             )}
 
             <div className="text-center text-[10px] text-white/30 font-mono uppercase tracking-widest mb-6">
-              Sliders bouwen de contouren van je cultuurprofiel
+              Elke slider onthult een stukje van jouw profiel.
             </div>
           </div>
         );

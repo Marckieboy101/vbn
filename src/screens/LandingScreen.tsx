@@ -27,15 +27,16 @@ export const LandingScreen: React.FC = () => {
 
   useEffect(() => {
     if (detectionProgress >= 100 && step === 'landing') {
-      setStep('intro');
+      setStep('intro_video');
     }
   }, [detectionProgress, setStep, step]);
 
   return (
     <div 
-      onClick={() => setStep('intro')}
+      onClick={() => setStep('intro_video')}
       className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative cursor-pointer select-none"
     >
+
       {/* Immersive Detection Overlay */}
       <AnimatePresence>
         {isVisible && !error && (

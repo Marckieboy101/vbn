@@ -1,3 +1,5 @@
+import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
+
 export interface SessionData {
   sessionId: string;
   genres?: string[];
@@ -63,6 +65,12 @@ export const saveSessionData = (session: Partial<SessionData> & { sessionId: str
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+
+  // Probeer direct te synchroniseren met Google Sheets na elke update.
+  triggerAutomaticGoogleSheetsSync().catch((error) => {
+    console.warn('Automatische Google Sheets synchronisatie mislukt:', error);
+  });
+
   return merged;
 };
 

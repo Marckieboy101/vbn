@@ -32,7 +32,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'chaos_gremlin',
     title: 'The Chaos Gremlin',
-    subtitle: 'Onvoorspelbare Sfeermaker',
+    subtitle: '',
     description: 'Je houdt van humor, hilariteit, memes, en onverwachte chaos. Je klikt overal tegelijk op en maakt je eigen regels in dit digitale culturele circuit. Een echte gangmaker!',
     image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=800',
     emoji: '🤪',
@@ -60,7 +60,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'hype_curator',
     title: 'The Hype Curator',
-    subtitle: 'Trendsetter & Hub Explorer',
+    subtitle: '',
     description: 'Je balanceert perfect tussen sociaal contact en persoonlijke verdieping. Je deelt de beste verborgen parels direct met je squadron en bent altijd als allereerste op de hoogte van nieuwe hypes.',
     image: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?auto=format&fit=crop&q=80&w=800',
     emoji: '🔥',
@@ -74,13 +74,11 @@ export const ARCHETYPES: Archetype[] = [
 ];
 
 export function calculateArchetype(selectedGenres: string[], answers: Record<string, number>): Archetype {
-  // Extract values
   const duration = answers['duration'] ?? 50;
   const immersion = answers['immersion'] ?? 50;
   const social = answers['social'] ?? 50;
   const breaks = answers['breaks'] ?? 50;
 
-  // Let's scoring maps
   if (selectedGenres.includes('comedy') && (social > 60 || duration < 45)) {
     return ARCHETYPES.find(a => a.id === 'chaos_gremlin') || ARCHETYPES[2];
   }
@@ -94,6 +92,5 @@ export function calculateArchetype(selectedGenres: string[], answers: Record<str
     return ARCHETYPES.find(a => a.id === 'speed_runner') || ARCHETYPES[1];
   }
 
-  // Fallback / standard
   return ARCHETYPES.find(a => a.id === 'hype_curator') || ARCHETYPES[4];
 }

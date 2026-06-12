@@ -9,6 +9,7 @@ import { useStore } from './store';
 import { GestureProvider } from './components/GestureProvider';
 import { CinematicBackground } from './components/CinematicBackground';
 import { FuturisticCursor } from './components/FuturisticCursor';
+import { VbnOverlay } from './components/VbnOverlay';
 import { soundManager } from './lib/sound';
 
 // Screens
@@ -65,6 +66,7 @@ function AppInner() {
       (error || isMouseFallback) ? "cursor-default" : "cursor-none"
     )}>
       <CinematicBackground />
+      <VbnOverlay />
       {(!error || isMouseFallback) && <FuturisticCursor />}
 
       <main className="relative z-10 w-full">

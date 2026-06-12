@@ -17,5 +17,9 @@ View your app in AI Studio: https://ai.studio/apps/372c0274-92d7-483e-b45b-0bef2
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Set the `VITE_GOOGLE_CLIENT_ID` in [.env.local](.env.local) to your Google OAuth client ID
-4. Run the app:
+4. In Google Cloud Console, add your local dev origin to the OAuth client's Authorized JavaScript origins. If Vite runs on port 3001, add:
+   - `http://localhost:3001`
+   - `http://127.0.0.1:3001`
+   If you run the app on a different port, add that exact origin instead.
+5. Run the app:
    `npm run dev`

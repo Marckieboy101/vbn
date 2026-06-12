@@ -281,9 +281,6 @@ export const GoogleSheetsIntegration: React.FC = () => {
         title="Google Sheets Synchronisatie"
       >
         <FileSpreadsheet className="w-5 h-5 text-white/40 group-hover:text-emerald-400 transition-colors" />
-        {currentSpreadsheet && (
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping" />
-        )}
       </button>
 
       {/* Modal Overlay */}

@@ -27,11 +27,11 @@ export const InstructionsScreen: React.FC = () => {
 
               <div className="space-y-6 text-lg md:text-xl text-white/60 leading-relaxed">
                 <p>
-                  Beweeg je hand voor de sensor om de sliders te bedienen.
+                  Beweeg je hand voor de camera om de sliders te bedienen.
                 </p>
 
                 <p>
-                  Houd je hand boven een positie om een waarde te selecteren.
+                  Doe je duim en wijsvingers dichter naar elkaar toe en doe ze weer open om het los te laten.
                 </p>
 
                 <p>
@@ -41,24 +41,24 @@ export const InstructionsScreen: React.FC = () => {
               </div>
 
               <div className="mt-12 flex flex-col sm:flex-row gap-4">
-                <InteractiveButton
-                  onClick={() => setStep('genre')}
-                  className="px-8 py-4 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group"
-                >
-                  <span className="text-base font-display font-medium uppercase tracking-[0.2em] text-white/60 group-hover:text-white transition-colors">
-                    Vorige
-                  </span>
-                </InteractiveButton>
+  <InteractiveButton
+    onClick={() => setStep('genre')}
+    className="px-8 py-2.5 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group"
+  >
+    <span className="text-base font-display font-medium uppercase tracking-[0.2em] text-white/60 group-hover:text-white transition-colors">
+      Vorige
+    </span>
+  </InteractiveButton>
 
-                <InteractiveButton
-                  onClick={() => setStep('questions')}
-                  className="px-12 py-5 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group overflow-hidden relative"
-                >
-                  <span className="relative z-10 text-lg md:text-xl font-display font-bold uppercase tracking-[0.15em] group-hover:text-brand transition-colors">
-                    Start met de sliders
-                  </span>
-                </InteractiveButton>
-              </div>
+  <InteractiveButton
+  onClick={() => setStep('questions')}
+  className="px-16 py-3 glass rounded-full bg-white/5 hover:bg-white/10 transition-all group overflow-hidden relative"
+>
+  <span className="relative z-10 whitespace-nowrap text-lg md:text-xl font-display font-bold uppercase tracking-[0.15em] group-hover:text-brand transition-colors">
+    Start met de sliders
+  </span>
+</InteractiveButton>
+</div>
             </div>
 
             {/* Rechterkant - Video */}
