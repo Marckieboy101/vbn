@@ -298,6 +298,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const phaseRef = useRef(phase);
   const isMutedRef = useRef(isMuted);
   const activeLangCodeRef = useRef(activeLangCode);
+  const rawTranscriptionRef = useRef('');
   // FIX: spokenHistory lives ONLY here; updated synchronously before any restart
   const spokenHistoryRef = useRef('');
   // FIX: micStream lives in a ref too so releaseMicStream always sees the latest stream
@@ -384,6 +385,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   // FIX: startRecording is stable. All mutable values are read from refs, not closures.
   const startRecording = useCallback(async (existingStream?: MediaStream) => {
     setPhase('recording');
+    phaseRef.current = 'recording';
     setRecognitionError(null);
     setIsMuted(false);
     isManuallyStoppedRef.current = false;
@@ -393,6 +395,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
     const stream = existingStream ?? await acquireMicStream();
     if (!stream) {
       setPhase('ask');
+      phaseRef.current = 'ask';
       return;
     }
 
@@ -454,6 +457,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
           .join(' ');
 
         setRawTranscription(currentFullRaw);
+        rawTranscriptionRef.current = currentFullRaw;
 
         // Apply moderation inline using refs (always fresh values)
         const { censored, matches } = runModerationFilter(
@@ -462,6 +466,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
           moderationActionRef.current
         );
         setTranscription(censored);
+        setSpokenHistoryDisplay(censored);
         setProfanityMatches(matches);
 
         if (sessionInterim) {
@@ -519,8 +524,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     startSpeechEngine();
   }, [runModerationFilter]);
 
-  // FIX: Keep a ref of rawTranscription so onend can read its latest value synchronously
-  const rawTranscriptionRef = useRef('');
   useEffect(() => {
     rawTranscriptionRef.current = rawTranscription;
   }, [rawTranscription]);
@@ -859,16 +862,19 @@ export const VoiceFeedbackScreen: React.FC = () => {
                 />
               </div>
 
-              <div className="max-h-[260px] overflow-y-auto custom-scrollbar flex items-center justify-center py-6">
-                <p className="text-2xl md:text-3xl text-white font-light text-center leading-relaxed">
-                  {transcription
-                    ? renderHighlightedText(transcription)
+              <div className="max-h-[260px] overflow-y-auto custom-scrollbar flex flex-col items-center justify-center py-6">
+                <div className="text-2xl md:text-3xl text-white font-light text-center leading-relaxed">
+                  {spokenHistoryDisplay || transcription
+                    ? renderHighlightedText(spokenHistoryDisplay || transcription)
                     : <span className="opacity-20 italic font-mono text-lg uppercase tracking-widest">Spreek je gedachten in...</span>
                   }
-                  {moderatedInterim && (
-                    <span className="opacity-40 italic"> {renderHighlightedText(moderatedInterim)}</span>
-                  )}
-                </p>
+                </div>
+
+                {moderatedInterim && (
+                  <div className="mt-4 text-base text-white/40 italic text-center max-w-3xl leading-relaxed">
+                    {renderHighlightedText(moderatedInterim)}
+                  </div>
+                )}
               </div>
 
               {profanityMatches.length > 0 && (

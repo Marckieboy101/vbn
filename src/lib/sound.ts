@@ -2,9 +2,9 @@ import { useStore } from '../store';
 
 const SFX_URLS = {
   HOVER: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  CLICK: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  CLICK: '/click.mp3',
   SUCCESS: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-  TRANSITION: 'https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3',
+  TRANSITION: '/transition.mp3',
 };
 
 class SoundManager {

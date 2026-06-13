@@ -496,7 +496,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
 
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tight leading-none mb-4 text-white">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-rose-400 to-yellow-400">
-              Mijn Wrapped Verhaal
+              Mijn Wrapped
             </span>
           </h2>
           <p className="text-white/60 text-sm mb-8 leading-relaxed max-w-xs">
@@ -512,7 +512,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
               }}
               className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-brand/10 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Ontdek Mijn Verhaal</span>
+              <span>Bekijk Mijn Verhaal</span>
               <ArrowRight className="w-4 h-4 fill-current" />
             </button>
             
@@ -523,7 +523,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
               }}
               className="px-8 py-3.5 bg-white/5 border border-white/5 hover:bg-white/10 text-white/70 font-display font-bold uppercase text-xs tracking-widest rounded-2xl transition-all cursor-pointer"
             >
-              Direct Naar Dashboard 📊
+              Naar Mijn Overzicht 📊
             </button>
           </div>
         </div>
@@ -757,7 +757,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   Vocal Vibe Vergrendeld
                 </h3>
                 <p className="text-[11px] text-white/40 leading-relaxed mb-6">
-                  Keep exploring to unlock this insight. Deel je spraak-feedback bij de microfoonscreen om een real-time AI analyseresultaat toe te voegen!
+                  Blijf ontdekken om dit inzicht vrij te spelen. Deel je spraak-feedback bij de microfoonscreen om een real-time AI analyseresultaat toe te voegen!
                 </p>
                 <button
                   onClick={() => {
@@ -847,7 +847,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
               className="px-6 py-3 bg-brand/10 border border-brand/20 hover:bg-brand/20 text-brand font-display font-bold uppercase text-[10px] tracking-widest rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Layers className="w-4 h-4" />
-              <span>Bekijk Geconsolideerd Dashboard</span>
+              <span>Bekijk Mijn Overzicht</span>
             </button>
             
             <button
@@ -1058,7 +1058,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                     MIJN VERZAMELDE <span className="text-brand">INSIGHTS</span>
                   </h1>
                   <p className="text-xs text-white/40 mt-2 font-mono uppercase tracking-widest">
-                    Live dynamic analytics • updateert bij elke actie
+                    Live inzichten • ververst bij alles wat je doet
                   </p>
                 </div>
 
@@ -1096,7 +1096,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <div className="glass border border-brand/20 bg-brand/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
                   <div className="flex justify-between items-start">
                     <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black">
-                      IDENTITEITS RAPPORT
+                      JOUW PROFIEL
                     </span>
                     <div className="w-10 h-10 bg-brand/25 rounded-2xl flex items-center justify-center text-2xl font-mono border border-brand/45">
                       {activeArchetype?.emoji}
@@ -1162,7 +1162,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold">
-                        COMMUNICATIE PERSONA
+                        HOE JIJ COMMUNICEERT
                       </span>
                       <span className="text-2xl">{hasVoice ? '🎙️' : '🔒'}</span>
                     </div>
@@ -1180,10 +1180,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                       <div className="flex flex-col items-center py-4 text-center">
                         <Lock className="w-5 h-5 text-brand/40 animate-pulse mb-2" />
                         <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                          [ Voice insight LOCKED ]
+                          Geen feedback gegeven
                         </p>
                         <p className="text-[10px] text-white/40 mt-1 leading-normal px-2">
-                          Keep exploring to unlock this insight
+                          Klik op de knop hieronder als je nog feedback wilt geven!
                         </p>
                       </div>
                     )}
@@ -1197,7 +1197,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                       }}
                       className="px-4 py-2 bg-white/5 hover:bg-white/10 font-mono text-[9px] uppercase font-bold tracking-widest border border-white/10 rounded-xl text-center w-full cursor-pointer mt-4"
                     >
-                      Audit Voice Record
+                      Ik wil nog feedback geven!
                     </button>
                   )}
                 </div>
@@ -1227,7 +1227,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
                   <div>
                     <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold block mb-4">
-                      MEEST EXTREME IJKELEMENT
+                      Jouw opvallendste voorkeuren
                     </span>
 
                     {hasAnswers && getMostExtremeCalibration() ? (
@@ -1292,7 +1292,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-5 mb-6">
                   <div>
                     <span className="font-mono text-[9px] uppercase tracking-widest text-brand font-black border border-brand/20 px-2.5 py-0.5 bg-brand/5 rounded-full inline-block mb-1.5">
-                      PERSOONLIJK DOSSIER ANALYSE 📊
+                      JOUW OVERZICHT 📊
                     </span>
                     <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight">
                       MIJN CO-OP WRAPPED MATRIX
@@ -1381,7 +1381,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   OP MAAT GEMAAKTE EXCLUSIEVE CURATIE 🎯
                 </span>
                 <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight -mt-0.5">
-                  GEPERSONALISEERDE AANBEVELINGEN
+                  AANBEVELINGEN VOOR JOU
                 </h3>
                 <p className="text-xs text-white/50 font-light mt-1 mb-6">
                   Op basis van je gekozen sfeer, leeftijd en schuifregelaars hebben we de volgende drie unieke aanbevelingen specifiek voor jou afgestemd.

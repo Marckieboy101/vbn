@@ -1,11 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '../store';
+import { useScreenVoiceOver } from '../lib/useScreenVoiceOver';
 
 export const IntroVideoScreen: React.FC = () => {
   const setStep = useStore((state) => state.setStep);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showPlaybackFallback, setShowPlaybackFallback] = useState(false);
+
+  useScreenVoiceOver('/voice-over-intro.mp3', { volume: 0.8, autoPlay: true });
 
   const handleVideoEnd = () => {
     setStep('intro');
@@ -57,9 +60,8 @@ export const IntroVideoScreen: React.FC = () => {
             className="w-full h-auto aspect-video bg-black"
             playsInline
             autoPlay
-            muted
           >
-            <source src="/videovbn.mp4" type="video/mp4" />
+            <source src="/menneke2.mp4" type="video/mp4" />
             Je browser ondersteunt video niet.
           </video>
 
