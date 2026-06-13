@@ -352,28 +352,28 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         title: 'Flitsende Creatieve Reviews',
         type: 'Leeftijd-Afgestemd',
         icon: '🚀',
-        desc: 'Beleef hapklare cultuurproducties en reviews met snelle edits en volop memes, passend bij jouw 12-13 jaar profiel.'
+        desc: 'Check korte video\'s, snelle reviews en volop memes die perfect passen bij jouw vibe.'
       });
     } else if (ageGroup === '14-15') {
       list.push({
         title: 'Interactieve Cinema Showcase',
         type: 'Leeftijd-Afgestemd',
         icon: '🔥',
-        desc: 'Neem deel aan co-op filmbeoordelingen en sferische groepsgesprekken die perfect aansluiten bij jouw Trendsetter-status.'
+        desc: 'Doe mee aan filmreviews en gezellige groepsgesprekken die helemaal passen bij jouw Trendsetter-vibe.'
       });
     } else if (ageGroup === '16-18') {
       list.push({
         title: 'Diepgaand Cinefiel Panel',
         type: 'Leeftijd-Afgestemd',
         icon: '🎓',
-        desc: 'Volg geavanceerde reviewreeksen over ingewikkelde plottwists en cinemakunst, afgesteld op de 16-18 Cinema Connoisseur.'
+        desc: 'Check uitgebreide reviews over slimme plottwists, indrukwekkende films en verborgen details, speciaal voor echte filmliefhebbers van 16-18 jaar.'
       });
     } else {
       list.push({
         title: 'Algemene Filmvlog-Workshops',
         type: 'Leeftijd-Afgestemd',
         icon: '🧭',
-        desc: 'Meld je aan voor onze interactieve co-op sessies om je gepersonaliseerd cultuur-DNA vorm te geven.'
+        desc: 'Doe mee aan onze interactieve co-op sessies en ontdek stap voor stap jouw unieke cultuur-DNA.'
       });
     }
 
@@ -385,7 +385,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'Satirische Film Reaction-Rooms',
             type: 'Sfeer-Matched',
             icon: '🎭',
-            desc: 'Humoristische podcasts en live vlogs die op ludieke wijze de draak steken met populaire filmclichés.'
+            desc: 'Grappige podcasts en gezellige vlogs die op een leuke manier bekende filmclichés en gekke momenten op de hak nemen.'
           });
           break;
         case 'sports':
@@ -393,7 +393,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'High-Energy Active Esports Vlogs',
             type: 'Sfeer-Matched',
             icon: '⚽',
-            desc: 'Adrenaline-gedreven analyses van epische sportmomenten en actie-rijke interactieve reportages.'
+            desc: 'Vol adrenaline gevulde sportmomenten, spectaculaire acties en interactieve verhalen die je midden in de spanning zetten.'
           });
           break;
         case 'thriller':
@@ -401,7 +401,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'Sferische Sound-Puzzels & Escape-Rooms',
             type: 'Sfeer-Matched',
             icon: '👾',
-            desc: 'Mysterieuze audio-avonturen en zenuwslopende detective scenario\'s waarin jouw scherpte wordt getest.'
+            desc: 'Spannende audio-avonturen en mysterieuze detectiveverhalen waarin jij aanwijzingen volgt en je speurneus op de proef wordt gesteld.'
           });
           break;
         case 'adventure':
@@ -409,7 +409,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'Digitale Expeditieverslagen & Quests',
             type: 'Sfeer-Matched',
             icon: '🏔️',
-            desc: 'Epische reisvlogs en diepe verkenningen waarin ontdekken en grenzen verleggen de hoofdrol spelen.'
+            desc: 'Epische reisvlogs en avonturen waarin je nieuwe plekken ontdekt, grenzen verlegt en steeds iets nieuws beleeft.'
           });
           break;
         case 'romance':
@@ -417,7 +417,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'Interpersoonlijke Dialoog & Vriendschap-Reviews',
             type: 'Sfeer-Matched',
             icon: '💖',
-            desc: 'Oprechte vlogs, diepgaande talks over menselijke verbindingen en zachte, melodieuze sfeerfragmenten.'
+            desc: 'Eerlijke vlogs, interessante gesprekken over mensen en relaties, en rustige video\'s met een fijne, relaxte sfeer.'
           });
           break;
         case 'scifi':
@@ -425,7 +425,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             title: 'Cybernetische Simulaties & Tech-Worldbuilding',
             type: 'Sfeer-Matched',
             icon: '🪐',
-            desc: 'Analyses van futuristische speculatieve werelden, synthesizer soundtracks en transhumane visies.'
+            desc: 'Duik in futuristische werelden, vette synth-soundtracks en ideeën over hoe technologie mensen in de toekomst kan veranderen.'
           });
           break;
       }
@@ -434,7 +434,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         title: 'Ontgrendel Je Sfeer-Aanbeveling',
         type: 'Sfeer-Matched',
         icon: '🧬',
-        desc: 'Kies een genre dat bij jouw stemming past. Op basis daarvan krijg je direct videotips die aansluiten bij jouw smaak en interesses.'
+        desc: 'Kies een genre dat past bij jouw mood. Daarna krijg je meteen videotips die aansluiten op wat jij leuk vindt en graag kijkt.'
       });
     }
 
@@ -444,44 +444,45 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
     const socialVal = answers['social'] ?? 50;
     const breaksVal = answers['breaks'] ?? 50;
 
-    if (socialVal > 60) {
-      list.push({
-        title: 'Co-op Groepschats & Live Discussies',
-        type: 'Voorkeur-Tuning',
-        icon: '👥',
-        desc: 'Jij geniet het meest van entertainment samen met anderen. Nodig vrienden uit voor een kijkavond, bespreek video\'s in een groepschat of ontdek samen nieuwe favorieten.'
-      });
-    } else if (immersionVal > 60) {
-      list.push({
-        title: 'Dolby Atmos Spatial Cinema',
-        type: 'Voorkeur-Tuning',
-        icon: '🎧',
-        desc: 'Voor jou draait alles om de ervaring. Met spatial audio, VR en andere meeslepende technieken haal je nog meer uit films en video\'s en voelt het alsof je er zelf middenin zit.'
-      });
+if (socialVal > 60) {
+  list.push({
+    title: 'Co-op Groepschats & Live Discussies',
+    type: 'Voorkeur-Tuning',
+    icon: '👥',
+    desc: 'Jij beleeft content het liefst samen. Organiseer een kijkavond, stuur memes in de groepschat of ontdek samen nieuwe series, video’s en films.'
+  });
+} else if (immersionVal > 60) {
+  list.push({
+    title: 'Dolby Atmos Spatial Cinema',
+    type: 'Voorkeur-Tuning',
+    icon: '🎧',
+    desc: 'Voor jou draait het om helemaal opgaan in de ervaring. Met spatial audio, VR en andere next-level technieken voelt het alsof je zelf onderdeel bent van het verhaal.'
+  });
 
-      //IK BEN NU HIER//
-    } else if (durationVal < 40) {
-      list.push({
-        title: 'Shortform Vlog-Highlights',
-        type: 'Voorkeur-Tuning',
-        icon: '📱',
-        desc: 'Jouw flitsende, korte duurlengte-ijking sluit feilloos aan op flitsende clips, TikTok trends en film-samenvattingen.'
-      });
-    } else if (breaksVal > 60) {
-      list.push({
-        title: 'Slow Cinema & Doordachte Reviews',
-        type: 'Voorkeur-Tuning',
-        icon: '🧘',
-        desc: 'Kies voor diepgaande documentaires en artistieke video-essays die de tijd nemen voor bezinning en pauzes.'
-      });
-    } else {
-      list.push({
-        title: 'Universele Film- & Gamedock Mix',
-        type: 'Voorkeur-Tuning',
-        icon: '✨',
-        desc: 'Dankzij jouw mooi gebalanceerde regelaars geniet je van een perfecte mix tussen snelle actie en lange verhalen.'
-      });
-    }
+  //IK BEN NU HIER//
+
+} else if (durationVal < 40) {
+  list.push({
+    title: 'Shortform Vlog-Highlights',
+    type: 'Voorkeur-Tuning',
+    icon: '📱',
+    desc: 'Jij houdt van snelle content zonder gedoe. Korte video’s, TikTok-trends en compacte highlights passen perfect bij jouw kijkstijl.'
+  });
+} else if (breaksVal > 60) {
+  list.push({
+    title: 'Slow Cinema & Doordachte Reviews',
+    type: 'Voorkeur-Tuning',
+    icon: '🧘',
+    desc: 'Jij neemt liever de tijd. Denk aan sterke documentaires, video-essays en verhalen die je echt aan het denken zetten.'
+  });
+} else {
+  list.push({
+    title: 'Universele Film- & Gamedock Mix',
+    type: 'Voorkeur-Tuning',
+    icon: '✨',
+    desc: 'Jouw voorkeuren zijn mooi in balans. Of het nu snelle actie, lange verhalen of iets ertussenin is: jij kunt eigenlijk alles waarderen.'
+  });
+}
 
     return list;
   };
@@ -523,7 +524,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
               }}
               className="px-8 py-3.5 bg-white/5 border border-white/5 hover:bg-white/10 text-white/70 font-display font-bold uppercase text-xs tracking-widest rounded-2xl transition-all cursor-pointer"
             >
-              Naar Mijn Overzicht 📊
+              Naar Mijn Overzicht
             </button>
           </div>
         </div>
@@ -591,7 +592,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 STAP 2 // DE SLIDERS
               </span> */}
               <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
-                JOUW <span className="text-brand">VOORKEUREN</span>
+                Jouw <span className="text-brand">voorkeuren</span>
               </h2>
             </div>
 
@@ -656,7 +657,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         <div className="flex flex-col justify-between h-full px-4 py-8 relative">
           <div className="text-center mt-6">
             <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
-              STAP 3 // IDENTITEITSCODE
+              STAP 3 // Wie Ben Jij?
             </span>
             <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
               Jouw Archetype <span className="text-brand">DNA</span>
@@ -669,7 +670,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             className="my-auto max-w-sm mx-auto w-full"
           >
             <div className="glass border border-white/5 rounded-[2.5rem] p-6 text-center overflow-hidden flex flex-col items-center group relative shadow-2xl bg-black/60">
-              <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-3 py-1 bg-[#00ffcc]/5 rounded-full inline-block mb-4">
+              <span>
                 {activeArchetype?.subtitle}
               </span>
               
@@ -686,7 +687,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
 
               <div className="w-full mt-6 border-t border-white/5 pt-4 text-left">
                 <span className="font-mono text-[8px] uppercase font-bold text-white/30 block mb-1">
-                  CO-OP MATCHMAKING COMPATIBILITY:
+                  {/* CO-OP MATCHMAKING COMPATIBILITY: */}
                 </span>
                 <span className="text-[10px] text-white/90 font-medium">
                   {activeArchetype?.socialFit}
@@ -696,7 +697,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           </motion.div>
 
           <div className="text-center text-[10px] text-white/30 font-mono uppercase tracking-widest mb-6">
-            Archetypes veranderen mee met dynamische keuzes
+           Je persoonlijkheidstype past zich aan op basis van wat jij kiest.
           </div>
         </div>
       )
@@ -709,7 +710,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           <div className="flex flex-col justify-between h-full px-4 py-8 relative">
             <div className="text-center mt-6">
               <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
-                STAP 4 // SPEECH-TO-TEXT ANALYTICS
+                Stap 4 // Spraak Naar Tekst
               </span>
               <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
                 Stemaudio <span className="text-brand">Vibe</span>
@@ -740,7 +741,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
 
                   <div className="p-3.5 bg-black/40 rounded-2xl text-left border border-white/5">
                     <span className="font-mono text-[8px] uppercase text-white/30 block mb-1">
-                      GEAUDITEERD SPRAAKINSIGHT:
+                      Jouw Spraakinzicht
                     </span>
                     <p className="text-[10px] text-white/75 italic line-clamp-2">
                       "{voiceFeedbackText}"
@@ -766,13 +767,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   }}
                   className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  Nu Inspreken 🎙️
+                  Nu Inspreken
                 </button>
               </div>
             )}
 
             <div className="text-center text-[10px] text-white/30 font-mono uppercase tracking-widest mb-6">
-              AI module analyseert toon, lengte en woordkeuze
+              De AI kijkt naar je toon, tekstlengte en woordkeuze.
             </div>
           </div>
         );
@@ -784,10 +785,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
         <div className="flex flex-col justify-between h-full px-4 py-8 relative">
           <div className="text-center mt-6">
             <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-1">
-              FINALE DOSSIERCOGNITIE
+              Jouw Eindresultaat
             </span>
             <h2 className="text-2xl md:text-3xl font-display font-black uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-brand to-rose-400 leading-none">
-              JOUW WRAPPED CERTIFICATE
+              Dit Is Jouw Wrapped
             </h2>
           </div>
 
@@ -802,7 +803,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
               <div className="absolute bottom-4 right-4 text-[#00ffcc]/35 text-xs animate-pulse font-mono">✦</div>
               
               <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest border border-white/5 p-1 px-3 bg-white/[0.02] rounded-full mb-4">
-                CO-OP MEMORANDUM // 2026
+                Jouw Overzicht
               </div>
 
               <div className="w-16 h-16 rounded-3xl bg-brand font-black text-black text-3xl flex items-center justify-center rotate-6 shadow-lg shadow-brand/10 mb-4 font-mono">
@@ -813,7 +814,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 {generateUserTitle()}
               </h3>
               <p className="text-[10px] text-white/40 uppercase font-mono tracking-widest mb-6">
-                ARCHETYPE INVENTIE: {activeArchetype?.title}
+                Dit Past Bij Jou: {activeArchetype?.title}
               </p>
 
               <div className="w-full flex flex-col gap-2 bg-black/40 rounded-2xl p-4 border border-white/5 text-xs">
@@ -1378,10 +1379,10 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-brand/10 via-brand/40 to-brand/10" />
                 
                 <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-2.5 py-0.5 bg-[#00ffcc]/5 rounded-full inline-block mb-1.5">
-                  OP MAAT GEMAAKTE EXCLUSIEVE CURATIE 🎯
+                  Wat goed past bij jou
                 </span>
                 <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight -mt-0.5">
-                  AANBEVELINGEN VOOR JOU
+                  Aanbevelingen voor jou
                 </h3>
                 <p className="text-xs text-white/50 font-light mt-1 mb-6">
                   Op basis van je gekozen sfeer, leeftijd en schuifregelaars hebben we de volgende drie unieke aanbevelingen specifiek voor jou afgestemd.
@@ -1422,7 +1423,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
 
                       {/* Small visual confirmation button */}
                       <div className="border-t border-white/5 pt-3.5 mt-4 flex items-center justify-between text-[8px] font-mono font-black uppercase tracking-wider text-white/20 group-hover:text-brand transition-colors">
-                        <span>AANBEVOLEN ACTIE</span>
+                        <span>Aanbevolen actie</span>
                         <ArrowRight className="w-3 h-3 text-current transform group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
@@ -1438,13 +1439,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6 mb-6">
                   <div>
                     <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-2.5 py-0.5 bg-[#00ffcc]/5 rounded-full inline-block mb-2">
-                      REAL-TIME SIMU-LAB 🧪
+                      {/* REAL-TIME SIMU-LAB 🧪 */}
                     </span>
                     <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight flex items-center gap-2">
-                       LIVE VIBE TUNER & CALIBRATIE CONSOLE
+                       Jouw Persoonlijke Vibe Scan
                     </h3>
                     <p className="text-xs text-white/50 font-light leading-relaxed">
-                      Wissel direct van genre of versleep de schuifregelaars hieronder om je Wrapped DNA-uitkomst, energietype en archetype in real-time te zien kantelen!
+                      {/* Wissel direct van genre of versleep de schuifregelaars hieronder om je Wrapped DNA-uitkomst, energietype en archetype in real-time te zien kantelen! */}
                     </p>
                   </div>
                 </div>
@@ -1453,7 +1454,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   {/* Left Column: Sferische Matrix (Genre Chooser) */}
                   <div className="flex flex-col gap-4">
                     <span className="font-mono text-[10px] text-white/35 uppercase tracking-widest font-black flex items-center gap-1.5 mb-1 text-left">
-                      📍 SFERISCHE MATRIX (GENRE SELECTIE)
+                    Ontdek Genres
                     </span>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {Object.entries(GENRE_STYLES).filter(([key]) => key !== 'none').map(([key, info]) => {
@@ -1482,7 +1483,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                   {/* Right Column: Calibration Parameters (Sliders Tuning) */}
                   <div className="flex flex-col gap-4">
                     <span className="font-mono text-[10px] text-white/35 uppercase tracking-widest font-black flex items-center gap-1.5 mb-1 text-left">
-                      ⚙️ EXPERIMENTELE PARAMETERS (SLIDERS TUNEN)
+                      Pas Je Voorkeuren Aan
                     </span>
                     <div className="flex flex-col gap-4">
                       {[
@@ -1524,9 +1525,6 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
 
             {/* Bottom consolidated feedback actions */}
             <div className="border-t border-white/5 pt-8 mt-10 text-center flex flex-col sm:flex-row justify-between items-center gap-6 font-mono text-[10px] text-white/30">
-              <span className="uppercase tracking-widest">
-                VanBeresteyn Wrapped • Versie 1.0.2 • 2026
-              </span>
 
               <button
                 onClick={() => {
@@ -1535,7 +1533,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                 }}
                 className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer font-black"
               >
-                SPEEL OPNIEUW 🔄
+                Opnieuw afspelen
               </button>
             </div>
           </motion.div>

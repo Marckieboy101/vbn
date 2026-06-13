@@ -64,7 +64,7 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Je balanceert perfect tussen sociaal contact en persoonlijke verdieping. Je deelt de beste verborgen parels direct met je squadron en bent altijd als allereerste op de hoogte van nieuwe hypes.',
     image: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?auto=format&fit=crop&q=80&w=800',
     emoji: '🔥',
-    socialFit: 'Leider van de vriendengroep, filter-ontwerper',
+    socialFit: '',
     traits: [
       { label: 'Trend Matching', percent: 88 },
       { label: 'Social Ratio', percent: 90 },
