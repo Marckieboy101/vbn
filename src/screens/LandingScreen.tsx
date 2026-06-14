@@ -16,8 +16,8 @@ export const LandingScreen: React.FC = () => {
     if (isVisible && !error) {
       // If detected, increase progress over 3 seconds as requested
       interval = setInterval(() => {
-        setDetectionProgress(prev => Math.min(100, prev + 1));
-      }, 30);
+        setDetectionProgress(prev => Math.min(50, prev + 1));
+      }, 50);
     } else {
       setDetectionProgress(0);
     }
@@ -26,7 +26,7 @@ export const LandingScreen: React.FC = () => {
   }, [isVisible, error]);
 
   useEffect(() => {
-    if (detectionProgress >= 100 && step === 'landing') {
+    if (detectionProgress >= 50 && step === 'landing') {
       setStep('intro_video');
     }
   }, [detectionProgress, setStep, step]);
@@ -68,7 +68,7 @@ export const LandingScreen: React.FC = () => {
                     strokeWidth="4"
                     fill="transparent"
                     strokeDasharray={2 * Math.PI * 88}
-                    strokeDashoffset={2 * Math.PI * 88 * (1 - detectionProgress / 100)}
+                    strokeDashoffset={2 * Math.PI * 88 * (1 - detectionProgress / 50)}
                     className="text-brand"
                     transition={{ type: "spring", bounce: 0, duration: 0.1 }}
                   />

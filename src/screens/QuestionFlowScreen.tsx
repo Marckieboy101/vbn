@@ -7,10 +7,10 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const QUESTIONS = [
-  { id: 'duration', text: "Ik geniet van lange, epische films die een complexe wereld opbouwen.", min: "Kort", max: "Episch" },
-  { id: 'immersion', text: "Ik wil volledig ondergedompeld worden in een virtuele omgeving.", min: "Passief", max: "Meeslepend" },
-  { id: 'social', text: "Ik deel culturele ervaringen het liefst met een grote groep.", min: "Solo", max: "Sociaal" },
-  { id: 'breaks', text: "Ik waardeer af en toe een pauze voor reflectie tijdens digitale kunst.", min: "Continu", max: "Gedoseerd" },
+  { id: 'duration', text: "Ik kijk liever een lange film dan een korte film.", min: "Nee", max: "Ja" },
+  { id: 'immersion', text: "Een pauze tijdens een film vind ik prettig.", min: "Nee", max: "Ja" },
+  { id: 'social', text: "Ik vind een filmavond leuker als er extra activiteiten zijn.", min: "Nee", max: "Ja" },
+  { id: 'breaks', text: "Ik vind het belangrijk dat een film gebaseerd is op een bekend verhaal of franchise.", min: "Nee", max: "Ja" },
 ];
 
 export const QuestionFlowScreen: React.FC = () => {

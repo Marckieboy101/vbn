@@ -8,7 +8,10 @@ export const IntroVideoScreen: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showPlaybackFallback, setShowPlaybackFallback] = useState(false);
 
-  useScreenVoiceOver('/voice-over-intro.mp3', { volume: 0.8, autoPlay: true });
+  useScreenVoiceOver('/voice-over-intro.mp3', {
+    volume: 1,
+    autoPlay: true,
+  });
 
   const handleVideoEnd = () => {
     setStep('intro');
@@ -16,6 +19,7 @@ export const IntroVideoScreen: React.FC = () => {
 
   const tryPlayVideo = async () => {
     if (!videoRef.current) return;
+
     try {
       await videoRef.current.play();
       setShowPlaybackFallback(false);
@@ -34,22 +38,22 @@ export const IntroVideoScreen: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="max-w-4xl w-full flex flex-col items-center gap-8"
+        className="max-w-4xl w-full flex flex-col items-center"
       >
         {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-5xl md:text-6xl font-display font-black uppercase tracking-tight text-white"
+          className="text-5xl md:text-6xl font-display font-black uppercase tracking-tight text-white mb-[-50px z-10"
         >
-          Welkom
+          {/* Welkom */}
         </motion.h1>
 
         {/* Video Container */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 1.65 }}
+          animate={{ opacity: 1, scale: 1.7 }}
           transition={{ delay: 0.3, duration: 0.6 }}
           className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-white/10"
         >

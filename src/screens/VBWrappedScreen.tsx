@@ -3,31 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
 import { saveSessionData } from '../lib/sessionStorage';
 import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
-import { 
-  X, 
-  ArrowRight, 
-  ArrowLeft, 
-  Sparkles, 
-  Trophy, 
-  Mic, 
-  Cpu, 
-  Lock, 
-  Activity, 
-  Compass, 
-  Heart, 
-  Zap, 
-  User, 
-  Play, 
-  Volume2, 
-  Layers, 
-  Sliders, 
-  MessageSquare,
+import {
+  X,
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  Play,
+  Sliders,
   RefreshCw,
   Share2,
-  Award
+  Download,
+  Smartphone
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { soundManager } from '../lib/sound';
+import { InteractiveButton } from '../components/InteractiveButton';
 
 interface VBWrappedScreenProps {
   onClose: () => void;
@@ -44,21 +34,18 @@ const GENRE_STYLES: Record<string, { label: string; emoji: string; text: string;
 };
 
 export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => {
-  const { 
-    selectedGenres, 
-    answers, 
-    activeArchetype, 
-    voiceFeedbackText, 
+  const {
+    selectedGenres,
+    answers,
+    activeArchetype,
+    voiceFeedbackText,
     voiceFeedbackOriginal,
     sessionId,
     setStep,
-    setAnswer,
-    toggleGenre,
     ageGroup
   } = useStore();
 
   useEffect(() => {
-    // Save session data locally on load
     const saveSessionDataLocally = async () => {
       try {
         saveSessionData({
@@ -72,8 +59,6 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           completed: true,
           thanked: true
         });
-        
-        // Trigger automatic Google Sheets sync in background
         await triggerAutomaticGoogleSheetsSync();
       } catch (error) {
         console.warn('Lokale sessieopslag mislukt:', error);
@@ -81,30 +66,18 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
     };
     saveSessionDataLocally();
 
-    // Smart idle reset timeout: restarts the experience if no activity is detected for 90 seconds
     let idleTimeout: NodeJS.Timeout;
-    
     const resetIdleTimer = () => {
       if (idleTimeout) clearTimeout(idleTimeout);
-      idleTimeout = setTimeout(() => {
-        onClose();
-      }, 90000); // 90 seconds idle timeout to allow plentiful slide watching & dashboard playing
+      idleTimeout = setTimeout(() => { onClose(); }, 90000);
     };
-
-    // Initialize timer
     resetIdleTimer();
 
-    // Listen to user interactions to reset idle timer
     const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'];
-    events.forEach(event => {
-      window.addEventListener(event, resetIdleTimer);
-    });
-
+    events.forEach(event => window.addEventListener(event, resetIdleTimer));
     return () => {
       if (idleTimeout) clearTimeout(idleTimeout);
-      events.forEach(event => {
-        window.removeEventListener(event, resetIdleTimer);
-      });
+      events.forEach(event => window.removeEventListener(event, resetIdleTimer));
     };
   }, [sessionId, selectedGenres, answers, activeArchetype, onClose]);
 
@@ -112,37 +85,42 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
   const [activeSlide, setActiveSlide] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const progressRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Define genres
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadComplete, setDownloadComplete] = useState(false);
+  const shareUrl = window.location.origin;
+
   const hasGenre = selectedGenres.length > 0;
   const genreId = hasGenre ? selectedGenres[0] : 'none';
   const genreInfo = GENRE_STYLES[genreId] || GENRE_STYLES.none;
 
-  // Answers count
   const answersCount = Object.keys(answers).length;
   const hasAnswers = answersCount > 0;
 
-  // Calculators
-  // 1. Energy Score / Vibe Rating
   const calcEnergyAndVibe = () => {
     let base = 50;
     if (answers['immersion']) base += (answers['immersion'] - 50) * 0.3;
     if (answers['social']) base += (answers['social'] - 50) * 0.3;
-    if (answers['duration']) base -= (answers['duration'] - 50) * 0.2; // brief is energetic
+    if (answers['duration']) base -= (answers['duration'] - 50) * 0.2;
     if (answers['breaks']) base -= (answers['breaks'] - 50) * 0.2;
     return Math.max(10, Math.min(100, Math.round(base)));
   };
 
-  // 3. User Title
   const generateUserTitle = () => {
     const extreme = getMostExtremeCalibration();
     const cleanExtreme = extreme ? extreme.label.replace('Max-', '').replace('Ultra-', '') : 'Aura';
     return `${activeArchetype?.title || 'Trendsetter'} of ${cleanExtreme}`;
   };
 
-  // 4. Most Extreme Slider Calibration
+  const questionLabels: Record<string, { min: string; max: string; desc: string }> = {
+    duration: { min: 'Kort & Krachtig', max: 'Episch Lang', desc: 'filmduursvoorkeur' },
+    immersion: { min: 'Passief Relaxt', max: 'Ultiem Meeslepend', desc: 'virtual reality verdrinking' },
+    social: { min: 'Individueel Solo', max: 'Mega Sociaal', desc: 'groepscohesie' },
+    breaks: { min: 'Non-stop Flow', max: 'Bewust Gedoseerd', desc: 'reflectiepauzes' }
+  };
+
   const getMostExtremeCalibration = () => {
     if (!hasAnswers) return null;
     let maxDeviation = -1;
@@ -158,7 +136,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
       }
     });
 
-    if (maxDeviation < 5) return null; // Very neutral
+    if (maxDeviation < 5) return null;
 
     const minLabel = questionLabels[extremeId]?.min || 'Rustig';
     const maxLabel = questionLabels[extremeId]?.max || 'Druk';
@@ -174,358 +152,79 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
     };
   };
 
-  const questionLabels: Record<string, { min: string; max: string; desc: string }> = {
-    duration: { min: 'Kort & Krachtig', max: 'Episch Lang', desc: 'filmduursvoorkeur' },
-    immersion: { min: 'Passief Relaxt', max: 'Ultiem Meeslepend', desc: 'virtual reality verdrinking' },
-    social: { min: 'Individueel Solo', max: 'Mega Sociaal', desc: 'groepscohesie' },
-    breaks: { min: 'Non-stop Flow', max: 'Bewust Gedoseerd', desc: 'reflectiepauzes' }
-  };
-
-  // 5. Vocal Persona Profile
   const hasVoice = !!voiceFeedbackText && voiceFeedbackText.trim().length > 0;
+
   const getVocalPersona = () => {
     if (!hasVoice) return null;
     const wordCount = voiceFeedbackOriginal ? voiceFeedbackOriginal.split(' ').length : 0;
-    
     let title = 'De Snappy Minimalist';
     let emoji = '🎙️';
     let summary = 'Kort, bondig en to-the-point. Je verspilt geen woorden en deelt direct je scherpe mening!';
-    
     if (wordCount > 18) {
-      title = 'De Eloquente Spraakwaterval';
-      emoji = '🗣️';
+      title = 'De Eloquente Spraakwaterval'; emoji = '🗣️';
       summary = 'Jij houdt wel van een goed gesprek! Je legt je feedback diepgaand en met veel passie uit.';
     } else if (voiceFeedbackOriginal?.toLowerCase().includes('stom') || voiceFeedbackOriginal?.toLowerCase().includes('slecht')) {
-      title = 'De Ongezouten Critici';
-      emoji = '🌶️';
+      title = 'De Ongezouten Critici'; emoji = '🌶️';
       summary = 'Eerlijk, vurig en kritisch. Jij noemt het beestje direct bij zijn naam en helpt ons echt scherp te blijven!';
     } else if (voiceFeedbackOriginal && voiceFeedbackOriginal !== voiceFeedbackText) {
-      title = 'The Stealth Censor-dodger';
-      emoji = '🕵️';
+      title = 'The Stealth Censor-dodger'; emoji = '🕵️';
       summary = 'Je hebt de AI filters echt uitgetest! Onze slimme gematigde audit heeft je opmerkingen keurig gered.';
     } else if (wordCount > 6) {
-      title = 'De Filosofische Vibe-Expert';
-      emoji = '🧘';
+      title = 'De Filosofische Vibe-Expert'; emoji = '🧘';
       summary = 'Bedachtzame feedback met de perfecte balans. Je woorden klinken gebalanceerd en inspirerend.';
     }
-
     return { title, emoji, summary, wordCount };
   };
 
-  // 6. Overall Participation Level %
   const calcParticipation = () => {
     let score = 0;
     if (hasGenre) score += 30;
-    score += (answersCount / 4) * 45; // up to 45%
+    score += (answersCount / 4) * 45;
     if (hasVoice) score += 25;
     return Math.round(Math.min(100, score));
   };
 
-  // Dynamic table data for the personalized Wrapped table
-  const wrappedTableData = [
-    {
-      id: 'genre',
-      label: 'Gekozen Sfeer-vibe',
-      category: 'Sfeer',
-      icon: <Compass className="w-4 h-4 text-emerald-400" />,
-      value: hasGenre ? `${genreInfo.emoji} ${genreInfo.label}` : 'Synthese niet gekalibreerd',
-      hasValue: hasGenre,
-      badgeText: hasGenre ? 'GEACTIVEERD' : 'VERGRENDELD',
-      badgeColor: hasGenre ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-white/35 border-white/5',
-      insight: (() => {
-        if (!hasGenre) return 'Kies een sfeer op de console om deze koppeling te leggen.';
-        switch (genreId) {
-          case 'comedy': return 'Je houdt van lachen, grappige momenten en goede memes. Alles draait voor jou om plezier, humor en een gezellige sfeer.';
-          case 'sports': return 'Je houdt van actie, adrenaline en competitieve sporten of online toernooien.';
-          case 'thriller': return 'Je houdt van spannende mysteries, donkere verhalen en momenten waarbij je op het puntje van je stoel zit. Alles wat een beetje mysterieus of spannend is, trekt jouw aandacht.';
-          case 'adventure': return 'Je houdt van avontuur, nieuwe plekken ontdekken en verhalen die je meenemen naar andere werelden. Reizen, vrijheid en bijzondere ervaringen geven jou energie.';
-          case 'romance': return 'Je houdt van persoonlijke verhalen, oprechte emoties en warme momenten tussen mensen. Verhalen die raken en een goed gevoel achterlaten spreken jou het meest aan.';
-          case 'scifi': return 'Je bent gek op futuristische werelden, slimme technologie en ideeën over hoe de toekomst eruit zou kunnen zien. Verhalen over innovatie, AI en high-tech ontwikkelingen trekken meteen jouw aandacht.';
-          default: return 'Je hebt geen uitgesproken voorkeur voor een bepaalde cultuur of stijl. Je staat open voor allerlei invloeden, verhalen en ervaringen uit verschillende hoeken van de wereld.';
-        }
-      })(),
-      isSlider: false,
-    },
-    {
-      id: 'age',
-      label: 'Leeftijdscategorie',
-      category: 'Doelgroep-ijking',
-      icon: <User className="w-4 h-4 text-brand" />,
-      value: ageGroup ? `${ageGroup} jaar` : 'Geen leeftijdsgroep opgegeven',
-      hasValue: !!ageGroup,
-      badgeText: ageGroup === '12-13' ? 'Young Creator' : ageGroup === '14-15' ? 'Trendsetter' : ageGroup === '16-18' ? 'Connoisseur' : 'VERGRENDELD',
-      badgeColor: ageGroup ? 'bg-brand/10 text-brand border-brand/20' : 'bg-white/5 text-white/35 border-white/5',
-      insight: (() => {
-        if (!ageGroup) return 'Kies eerst je leeftijd om deze functie of persoonlijke afstemming te ontgrendelen. Zodra je je leeftijd hebt ingevuld, kunnen de resultaten beter op jou worden afgestemd.';
-        switch (ageGroup) {
-          case '12-13': return 'Jij houdt van creatieve, energieke en direct pakkende filmideeën die vanaf de eerste minuut je aandacht trekken.';
-          case '14-15': return 'Jij houdt van vernieuwende en verrassende thema’s die spannend zijn, maar tegelijkertijd herkenbaar en toegankelijk blijven.';
-          case '16-18': return 'Jij houdt van diepere cinema, complexe karakters en verfijnde narratieve diepgang.';
-          default: return 'Je voorkeuren zijn momenteel gekoppeld aan een neutraal profiel. Hierdoor krijg je een brede mix van content en aanbevelingen zonder sterke nadruk op een specifieke richting.';
-        }
-      })(),
-      isSlider: false,
-    },
-    {
-      id: 'duration',
-      label: 'Content Duurlengte',
-      category: 'Tijdsbesteding',
-      icon: <Activity className="w-4 h-4 text-amber-400" />,
-      value: answers['duration'] ?? 50,
-      hasValue: hasAnswers,
-      badgeText: (answers['duration'] ?? 50) > 60 ? 'Episch Lang' : (answers['duration'] ?? 50) < 40 ? 'Snackable Kort' : 'Gebalanceerd',
-      badgeColor: (answers['duration'] ?? 50) > 60 ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : (answers['duration'] ?? 50) < 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20',
-      insight: (() => {
-        const val = answers['duration'] ?? 50;
-        if (!hasAnswers) return 'Sleep de schuifregelaars om te laten zien welke tijdsperiodes jou het meest aanspreken.';
-        if (val > 60) return 'Je kijkt het liefst naar lange films met een meeslepend verhaal dat de tijd krijgt om zich goed te ontwikkelen.';
-        if (val < 40) return 'Je houdt van korte, snelle content die direct de aandacht pakt, zoals TikToks, Shorts en andere snelle video\'s.';
-        return 'Je geniet zowel van korte, snelle video\'s als van langere films en series. Voor jou draait het om een fijne mix van snelle entertainmentmomenten en verhalen waar je echt in kunt opgaan.';
-      })(),
-      isSlider: true,
-    },
-
-    //HIER ZIJN WE NUUUUUUUU//
-    {
-      id: 'immersion',
-      label: 'Zintuiglijke Immersie',
-      category: 'Belevingsdiepte',
-      icon: <Cpu className="w-4 h-4 text-cyan-400" />,
-      value: answers['immersion'] ?? 50,
-      hasValue: hasAnswers,
-      badgeText: (answers['immersion'] ?? 50) > 60 ? 'Ultiem Actief' : (answers['immersion'] ?? 50) < 40 ? 'Passief Relaxt' : 'Gematigd',
-      badgeColor: (answers['immersion'] ?? 50) > 60 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : (answers['immersion'] ?? 50) < 40 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-      insight: (() => {
-        const val = answers['immersion'] ?? 50;
-        if (!hasAnswers) return 'Verplaats de immersieslider om aan te geven hoeveel beleving en onderdompeling jij zoekt in films, series of andere media.';
-        if (val > 60) return 'Je zoekt maximale beleving. VR, 3D-audio en meeslepende ervaringen spreken jou aan, omdat je het gevoel wilt hebben dat je zelf midden in het verhaal staat.';
-        if (val < 40) return 'Je kijkt het liefst ontspannen naar content zonder er veel moeite voor te hoeven doen. Gewoon achteroverleunen, genieten en het verhaal op je af laten komen.';
-        return 'Je geniet van films, series en andere content, maar houdt graag een gezonde afstand. Je hoeft niet volledig op te gaan in de ervaring; het kijken zelf is voor jou al genoeg.';
-      })(),
-      isSlider: true,
-    },
-    {
-      id: 'social',
-      label: 'Sociaal Engagement',
-      category: 'Groepen-vibe',
-      icon: <Heart className="w-4 h-4 text-rose-400" />,
-      value: answers['social'] ?? 50,
-      hasValue: hasAnswers,
-      badgeText: (answers['social'] ?? 50) > 60 ? 'Mega Sociaal' : (answers['social'] ?? 50) < 40 ? 'Individueel Solo' : 'Selectief',
-      badgeColor: (answers['social'] ?? 50) > 60 ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : (answers['social'] ?? 50) < 40 ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' : 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
-      insight: (() => {
-        const val = answers['social'] ?? 50;
-        if (!hasAnswers) return 'Gebruik de schaal om aan te geven hoe sociaal jij het liefst van content geniet. Of je nu graag samen kijkt of juist liever alleen, jouw voorkeur bepaalt de ervaring.';
-        if (val > 60) return 'Je beleeft entertainment het liefst samen met anderen. Bioscoopuitjes, groepschats en gedeelde ervaringen maken voor jou alles leuker.';
-        if (val < 40) return 'Je ontdekt films, series en andere content het liefst op je eigen tempo. In je eigen omgeving kun je rustig genieten en zelf bepalen wat je kijkt en wanneer.';
-        return 'Je vindt het leuk om samen met anderen van entertainment te genieten, maar kunt net zo goed helemaal opgaan in een solo-kijksessie. Voor jou is het de afwisseling die het leuk maakt.';
-      })(),
-      isSlider: true,
-    },
-    {
-      id: 'breaks',
-      label: 'Reflectie-Dosering',
-      category: 'Prikkelregulatie',
-      icon: <Sliders className="w-4 h-4 text-violet-400" />,
-      value: answers['breaks'] ?? 50,
-      hasValue: hasAnswers,
-      badgeText: (answers['breaks'] ?? 50) > 60 ? 'Bewust Gedoseerd' : (answers['breaks'] ?? 50) < 40 ? 'Non-stop Flow' : 'Gebalanceerd',
-      badgeColor: (answers['breaks'] ?? 50) > 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : (answers['breaks'] ?? 50) < 40 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-      insight: (() => {
-        const val = answers['breaks'] ?? 50;
-        if (!hasAnswers) return 'Geef aan hoeveel waarde jij hecht aan reflectie en verdieping. Zo kunnen de resultaten beter aansluiten bij de manier waarop jij content beleeft en verwerkt.';
-        if (val > 60) return 'Je houdt van verhalen die je aan het denken zetten. Momenten van rust, verdieping en reflectie maken voor jou vaak net zoveel indruk als de actie zelf.';
-        if (val < 40) return 'Je houdt van tempo en actie. Het liefst kijk je naar content die blijft doorgaan, met snelle scènes en weinig momenten waarop het verhaal stilvalt.';
-        return 'Je houdt van een fijne mix tussen actie en rust. Korte momenten om even alles te verwerken zijn welkom, zolang het verhaal daarna weer lekker vaart maakt.';
-      })(),
-      isSlider: true,
-    },
-  ];
-
-  // Dynamic recommendations purely derived from user inputs (genre, age and sliders)
-  const getRecommendations = () => {
-    const list = [];
-    
-    // 1. Age-Based Recommendation
-    if (ageGroup === '12-13') {
-      list.push({
-        title: 'Flitsende Creatieve Reviews',
-        type: 'Leeftijd-Afgestemd',
-        icon: '🚀',
-        desc: 'Check korte video\'s, snelle reviews en volop memes die perfect passen bij jouw vibe.'
-      });
-    } else if (ageGroup === '14-15') {
-      list.push({
-        title: 'Interactieve Cinema Showcase',
-        type: 'Leeftijd-Afgestemd',
-        icon: '🔥',
-        desc: 'Doe mee aan filmreviews en gezellige groepsgesprekken die helemaal passen bij jouw Trendsetter-vibe.'
-      });
-    } else if (ageGroup === '16-18') {
-      list.push({
-        title: 'Diepgaand Cinefiel Panel',
-        type: 'Leeftijd-Afgestemd',
-        icon: '🎓',
-        desc: 'Check uitgebreide reviews over slimme plottwists, indrukwekkende films en verborgen details, speciaal voor echte filmliefhebbers van 16-18 jaar.'
-      });
-    } else {
-      list.push({
-        title: 'Algemene Filmvlog-Workshops',
-        type: 'Leeftijd-Afgestemd',
-        icon: '🧭',
-        desc: 'Doe mee aan onze interactieve co-op sessies en ontdek stap voor stap jouw unieke cultuur-DNA.'
-      });
-    }
-
-    // 2. Genre-Based Recommendation
-    if (hasGenre) {
-      switch (genreId) {
-        case 'comedy':
-          list.push({
-            title: 'Satirische Film Reaction-Rooms',
-            type: 'Sfeer-Matched',
-            icon: '🎭',
-            desc: 'Grappige podcasts en gezellige vlogs die op een leuke manier bekende filmclichés en gekke momenten op de hak nemen.'
-          });
-          break;
-        case 'sports':
-          list.push({
-            title: 'High-Energy Active Esports Vlogs',
-            type: 'Sfeer-Matched',
-            icon: '⚽',
-            desc: 'Vol adrenaline gevulde sportmomenten, spectaculaire acties en interactieve verhalen die je midden in de spanning zetten.'
-          });
-          break;
-        case 'thriller':
-          list.push({
-            title: 'Sferische Sound-Puzzels & Escape-Rooms',
-            type: 'Sfeer-Matched',
-            icon: '👾',
-            desc: 'Spannende audio-avonturen en mysterieuze detectiveverhalen waarin jij aanwijzingen volgt en je speurneus op de proef wordt gesteld.'
-          });
-          break;
-        case 'adventure':
-          list.push({
-            title: 'Digitale Expeditieverslagen & Quests',
-            type: 'Sfeer-Matched',
-            icon: '🏔️',
-            desc: 'Epische reisvlogs en avonturen waarin je nieuwe plekken ontdekt, grenzen verlegt en steeds iets nieuws beleeft.'
-          });
-          break;
-        case 'romance':
-          list.push({
-            title: 'Interpersoonlijke Dialoog & Vriendschap-Reviews',
-            type: 'Sfeer-Matched',
-            icon: '💖',
-            desc: 'Eerlijke vlogs, interessante gesprekken over mensen en relaties, en rustige video\'s met een fijne, relaxte sfeer.'
-          });
-          break;
-        case 'scifi':
-          list.push({
-            title: 'Cybernetische Simulaties & Tech-Worldbuilding',
-            type: 'Sfeer-Matched',
-            icon: '🪐',
-            desc: 'Duik in futuristische werelden, vette synth-soundtracks en ideeën over hoe technologie mensen in de toekomst kan veranderen.'
-          });
-          break;
-      }
-    } else {
-      list.push({
-        title: 'Ontgrendel Je Sfeer-Aanbeveling',
-        type: 'Sfeer-Matched',
-        icon: '🧬',
-        desc: 'Kies een genre dat past bij jouw mood. Daarna krijg je meteen videotips die aansluiten op wat jij leuk vindt en graag kijkt.'
-      });
-    }
-
-    // 3. Slider-Based Recommendation
-    const durationVal = answers['duration'] ?? 50;
-    const immersionVal = answers['immersion'] ?? 50;
-    const socialVal = answers['social'] ?? 50;
-    const breaksVal = answers['breaks'] ?? 50;
-
-if (socialVal > 60) {
-  list.push({
-    title: 'Co-op Groepschats & Live Discussies',
-    type: 'Voorkeur-Tuning',
-    icon: '👥',
-    desc: 'Jij beleeft content het liefst samen. Organiseer een kijkavond, stuur memes in de groepschat of ontdek samen nieuwe series, video’s en films.'
-  });
-} else if (immersionVal > 60) {
-  list.push({
-    title: 'Dolby Atmos Spatial Cinema',
-    type: 'Voorkeur-Tuning',
-    icon: '🎧',
-    desc: 'Voor jou draait het om helemaal opgaan in de ervaring. Met spatial audio, VR en andere next-level technieken voelt het alsof je zelf onderdeel bent van het verhaal.'
-  });
-
-  //IK BEN NU HIER//
-
-} else if (durationVal < 40) {
-  list.push({
-    title: 'Shortform Vlog-Highlights',
-    type: 'Voorkeur-Tuning',
-    icon: '📱',
-    desc: 'Jij houdt van snelle content zonder gedoe. Korte video’s, TikTok-trends en compacte highlights passen perfect bij jouw kijkstijl.'
-  });
-} else if (breaksVal > 60) {
-  list.push({
-    title: 'Slow Cinema & Doordachte Reviews',
-    type: 'Voorkeur-Tuning',
-    icon: '🧘',
-    desc: 'Jij neemt liever de tijd. Denk aan sterke documentaires, video-essays en verhalen die je echt aan het denken zetten.'
-  });
-} else {
-  list.push({
-    title: 'Universele Film- & Gamedock Mix',
-    type: 'Voorkeur-Tuning',
-    icon: '✨',
-    desc: 'Jouw voorkeuren zijn mooi in balans. Of het nu snelle actie, lange verhalen of iets ertussenin is: jij kunt eigenlijk alles waarderen.'
-  });
-}
-
-    return list;
-  };
+  // ─── Slides ────────────────────────────────────────────────────────────────
 
   const slides = [
     {
       id: 'welcome',
       render: () => (
         <div className="flex flex-col items-center justify-center text-center h-full max-w-lg mx-auto px-4 py-8 relative">
-
-
-
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tight leading-none mb-4 text-white">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-rose-400 to-yellow-400">
               Mijn Wrapped
             </span>
           </h2>
           <p className="text-white/60 text-sm mb-8 leading-relaxed max-w-xs">
-          Bekijk wat jij interessant vind!          </p>
+            Bekijk wat jij interessant vind!
+          </p>
 
           <div className="flex flex-col gap-2.5 w-full">
-            <button
+            <InteractiveButton
               onClick={() => {
                 soundManager.play('SUCCESS', 0.2);
                 setIsPaused(false);
                 setSlideProgress(0);
                 setActiveSlide(1);
               }}
-              className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-brand/10 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-brand/10 w-full"
             >
-              <span>Bekijk Mijn Verhaal</span>
-              <ArrowRight className="w-4 h-4 fill-current" />
-            </button>
-            
-            <button
+              <div className="flex items-center gap-2">
+                <span>Bekijk Mijn Verhaal</span>
+                <ArrowRight className="w-4 h-4 fill-current" />
+              </div>
+            </InteractiveButton>
+
+            <InteractiveButton
               onClick={() => {
                 soundManager.play('CLICK', 0.3);
                 setMode('summary');
               }}
-              className="px-8 py-3.5 bg-white/5 border border-white/5 hover:bg-white/10 text-white/70 font-display font-bold uppercase text-xs tracking-widest rounded-2xl transition-all cursor-pointer"
+              className="px-8 py-3.5 bg-white/5 border border-white/5 text-white/70 font-display font-bold uppercase text-xs tracking-widest rounded-2xl w-full"
             >
               Naar Mijn Overzicht
-            </button>
+            </InteractiveButton>
           </div>
         </div>
       )
@@ -541,7 +240,7 @@ if (socialVal > 60) {
           </div>
 
           {hasGenre ? (
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="my-auto max-w-sm mx-auto w-full"
@@ -560,22 +259,22 @@ if (socialVal > 60) {
                 <p className="text-white/80 text-xs font-light leading-relaxed px-2">
                   "{genreInfo.text}"
                 </p>
-                </div>
+              </div>
             </motion.div>
           ) : (
             <div className="my-auto max-w-sm mx-auto p-8 glass border border-white/5 rounded-3xl text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-white/5 rounded-full border border-white/5 flex items-center justify-center mb-4 text-white/20">
                 <Lock className="w-6 h-6 text-brand/40 animate-pulse" />
               </div>
-              <button
+              <InteractiveButton
                 onClick={() => {
                   soundManager.play('CLICK', 0.3);
                   setStep('genre');
                 }}
-                className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl"
               >
                 Kies genre
-              </button>
+              </InteractiveButton>
             </div>
           )}
         </div>
@@ -588,28 +287,22 @@ if (socialVal > 60) {
         return (
           <div className="flex flex-col justify-between h-full px-4 py-8 relative">
             <div className="text-center mt-6">
-              {/* <span className="font-mono text-[9px] uppercase tracking-widest font-bold text-white/30 block mb-2">
-                STAP 2 // DE SLIDERS
-              </span> */}
               <h2 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tight text-white leading-none">
                 Jouw <span className="text-brand">voorkeuren</span>
               </h2>
             </div>
 
             {hasAnswers && extreme ? (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="my-auto max-w-sm mx-auto w-full"
               >
                 <div className="glass border border-brand/20 bg-black/60 rounded-[2rem] p-8 text-center relative overflow-hidden shadow-2xl">
-                  {/* Neon laser scan bar */}
                   <div className="absolute top-0 inset-x-0 h-[2px] bg-brand animate-scan shadow-[0_0_15px_#ff4d4d]" style={{ animationDuration: '4s' }} />
-                  
                   <div className="w-14 h-14 bg-brand/10 border border-brand/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand">
                     <Sliders className="w-7 h-7" />
                   </div>
-                  
                   <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black block mb-1">
                     EST_VALUE: {extreme.value}% DEVIATION
                   </span>
@@ -626,21 +319,19 @@ if (socialVal > 60) {
                 <div className="w-16 h-16 bg-white/5 rounded-full border border-white/5 flex items-center justify-center mb-4 text-white/20">
                   <Lock className="w-6 h-6 text-brand/40 animate-pulse" />
                 </div>
-                <h3 className="text-sm font-display font-bold uppercase tracking-wider text-white mb-2">
-                  Bijna daar!
-                </h3>
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider text-white mb-2">Bijna daar!</h3>
                 <p className="text-[11px] text-white/40 leading-relaxed mb-6">
                   Blijf ontdekken om deze insight vrij te spelen. Vul de sliders in en ontdek jouw meest extreme voorkeuren!
                 </p>
-                <button
+                <InteractiveButton
                   onClick={() => {
                     soundManager.play('CLICK', 0.3);
                     setStep('questions');
                   }}
-                  className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl"
                 >
                   Starten
-                </button>
+                </InteractiveButton>
               </div>
             )}
 
@@ -664,31 +355,23 @@ if (socialVal > 60) {
             </h2>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="my-auto max-w-sm mx-auto w-full"
           >
             <div className="glass border border-white/5 rounded-[2.5rem] p-6 text-center overflow-hidden flex flex-col items-center group relative shadow-2xl bg-black/60">
-              <span>
-                {activeArchetype?.subtitle}
-              </span>
-              
+              <span>{activeArchetype?.subtitle}</span>
               <div className="w-20 h-20 bg-brand/10 rounded-full border border-brand/20 flex items-center justify-center text-4xl mb-4 shadow-[0_0_20px_rgba(255,80,80,0.15)]">
                 {activeArchetype?.emoji || '👑'}
               </div>
-
               <h3 className="text-2xl md:text-3xl font-display font-black uppercase text-white tracking-tight mb-2">
                 {activeArchetype?.title}
               </h3>
               <p className="text-white/60 text-xs font-light leading-relaxed px-2">
                 "{activeArchetype?.description}"
               </p>
-
               <div className="w-full mt-6 border-t border-white/5 pt-4 text-left">
-                <span className="font-mono text-[8px] uppercase font-bold text-white/30 block mb-1">
-                  {/* CO-OP MATCHMAKING COMPATIBILITY: */}
-                </span>
                 <span className="text-[10px] text-white/90 font-medium">
                   {activeArchetype?.socialFit}
                 </span>
@@ -697,7 +380,7 @@ if (socialVal > 60) {
           </motion.div>
 
           <div className="text-center text-[10px] text-white/30 font-mono uppercase tracking-widest mb-6">
-           Je persoonlijkheidstype past zich aan op basis van wat jij kiest.
+            Je persoonlijkheidstype past zich aan op basis van wat jij kiest.
           </div>
         </div>
       )
@@ -718,7 +401,7 @@ if (socialVal > 60) {
             </div>
 
             {hasVoice && voice ? (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="my-auto max-w-sm mx-auto w-full"
@@ -727,18 +410,15 @@ if (socialVal > 60) {
                   <div className="absolute top-4 right-4 text-[9px] font-mono text-brand/60 uppercase">
                     🎙️ RECORD: OK
                   </div>
-
                   <div className="w-16 h-16 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse">
                     {voice.emoji}
                   </div>
-
                   <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight mb-2">
                     {voice.title}
                   </h3>
                   <p className="text-white/70 text-xs font-light leading-relaxed px-4 mb-4">
                     "{voice.summary}"
                   </p>
-
                   <div className="p-3.5 bg-black/40 rounded-2xl text-left border border-white/5">
                     <span className="font-mono text-[8px] uppercase text-white/30 block mb-1">
                       Jouw Spraakinzicht
@@ -760,15 +440,15 @@ if (socialVal > 60) {
                 <p className="text-[11px] text-white/40 leading-relaxed mb-6">
                   Blijf ontdekken om dit inzicht vrij te spelen. Deel je spraak-feedback bij de microfoonscreen om een real-time AI analyseresultaat toe te voegen!
                 </p>
-                <button
+                <InteractiveButton
                   onClick={() => {
                     soundManager.play('CLICK', 0.3);
                     setStep('voice_feedback');
                   }}
-                  className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-brand text-black font-mono text-[10px] font-black uppercase tracking-widest rounded-xl"
                 >
                   Nu Inspreken
-                </button>
+                </InteractiveButton>
               </div>
             )}
 
@@ -792,16 +472,15 @@ if (socialVal > 60) {
             </h2>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="my-auto max-w-sm mx-auto w-full"
           >
             <div className="relative glass bg-[#0e0e0e] border-2 border-brand/40 rounded-[2.5rem] p-6 shadow-2xl flex flex-col items-center">
-              {/* Decorative design sparkles */}
               <div className="absolute top-4 left-4 text-brand/35 text-xs animate-ping font-mono">✦</div>
               <div className="absolute bottom-4 right-4 text-[#00ffcc]/35 text-xs animate-pulse font-mono">✦</div>
-              
+
               <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest border border-white/5 p-1 px-3 bg-white/[0.02] rounded-full mb-4">
                 Jouw Overzicht
               </div>
@@ -833,48 +512,49 @@ if (socialVal > 60) {
               </div>
 
               <p className="text-[10px] text-center text-white/40 italic leading-relaxed mt-4 px-4 font-light">
-                "Je bent uniek gecalibreerd binnen het cultuurlandschap van VanBeresteyn. Deel je Wrapped of probeer andere sfeercombi\'s!"
+                "Je bent uniek gecalibreerd binnen het cultuurlandschap van VanBeresteyn. Deel je Wrapped of probeer andere sfeercombi's!"
               </p>
             </div>
           </motion.div>
 
-          {/* Bottom buttons summary */}
           <div className="flex flex-col gap-2 w-full max-w-sm mx-auto mb-4">
-            <button
+            <InteractiveButton
               onClick={() => {
                 soundManager.play('CLICK', 0.2);
                 setMode('summary');
               }}
-              className="px-6 py-3 bg-brand/10 border border-brand/20 hover:bg-brand/20 text-brand font-display font-bold uppercase text-[10px] tracking-widest rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-brand/10 border border-brand/20 text-brand font-display font-bold uppercase text-[10px] tracking-widest rounded-2xl w-full"
             >
-              <Layers className="w-4 h-4" />
-              <span>Bekijk Mijn Overzicht</span>
-            </button>
-            
-            <button
+              <div className="flex items-center gap-2">
+                <span>Exporteer & Deel</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </InteractiveButton>
+
+            <InteractiveButton
               onClick={() => {
                 soundManager.play('SUCCESS', 0.5);
                 onClose();
               }}
-              className="px-6 py-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:text-white hover:bg-rose-500/10 font-mono text-[9px] uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+              className="px-6 py-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 font-mono text-[9px] uppercase tracking-widest rounded-xl w-full"
             >
-              Speel Opnieuw 🔄
-            </button>
+              Speel Opnieuw
+            </InteractiveButton>
           </div>
         </div>
       )
     }
   ];
 
-  // Story Slides auto-advancer
+  // Story slides auto-advancer
   useEffect(() => {
     if (mode === 'summary' || isPaused) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
 
-    const interval = 60; // ms
-    const stepAmount = 100 / (6000 / interval); // 6 seconds total per slide
+    const interval = 60;
+    const stepAmount = 100 / (6000 / interval);
 
     timerRef.current = setInterval(() => {
       setSlideProgress(prev => {
@@ -884,7 +564,6 @@ if (socialVal > 60) {
             setActiveSlide(prevSlide => prevSlide + 1);
             return 0;
           } else {
-            // Completed, go to summary dashboard
             setMode('summary');
             return 100;
           }
@@ -893,44 +572,236 @@ if (socialVal > 60) {
       });
     }, interval);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [activeSlide, mode, isPaused]);
+
+  // Generate QR when entering summary (export) mode
+  useEffect(() => {
+    if (mode !== 'summary') return;
+    import('qrcode').then((mod) => {
+      const toDataURL: (text: string, opts: object) => Promise<string> =
+        (mod as any).toDataURL ?? (mod as any).default?.toDataURL;
+      return toDataURL(shareUrl, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#FF5050', light: '#111111' },
+      });
+    }).then(setQrDataUrl).catch(() => {});
+  }, [mode, shareUrl]);
+
+  const downloadExportCard = async () => {
+    setIsDownloading(true);
+    try {
+      const mod = await import('qrcode');
+      const toDataURL: (text: string, opts: object) => Promise<string> =
+        (mod as any).toDataURL ?? (mod as any).default?.toDataURL;
+      const qrUrl = await toDataURL(shareUrl, {
+        width: 220, margin: 2,
+        color: { dark: '#FF5050', light: '#111111' },
+      });
+
+      const canvas = document.createElement('canvas');
+      const W = 800, H = 1080;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d')!;
+
+      const rr = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+        ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r);
+        ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h);
+        ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r);
+        ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+      };
+
+      const bg = ctx.createRadialGradient(W / 2, H * 0.35, 0, W / 2, H * 0.35, 700);
+      bg.addColorStop(0, '#150303'); bg.addColorStop(1, '#050505');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+      const tl = ctx.createLinearGradient(0, 0, W, 0);
+      tl.addColorStop(0, 'rgba(255,80,80,0)'); tl.addColorStop(0.5, 'rgba(255,80,80,1)'); tl.addColorStop(1, 'rgba(255,80,80,0)');
+      ctx.fillStyle = tl; ctx.fillRect(0, 0, W, 3);
+
+      ctx.fillStyle = 'rgba(255,80,80,0.1)';
+      rr(40, 26, 210, 28, 8); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,80,80,0.25)'; ctx.lineWidth = 1;
+      rr(40, 26, 210, 28, 8); ctx.stroke();
+      ctx.fillStyle = '#FF5050';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.fillText('VANBER•ESTEYN  WRAPPED', 55, 43);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(sessionId.toUpperCase(), W - 40, 43);
+      ctx.textAlign = 'left';
+
+      ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(40, 68, W - 80, 1);
+
+      await document.fonts.ready;
+      ctx.font = '72px serif'; ctx.textAlign = 'center';
+      ctx.fillText(activeArchetype?.emoji || '👑', W / 2, 185);
+
+      ctx.fillStyle = '#FF5050';
+      ctx.font = 'bold 30px "Inter", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      const rawTitle = generateUserTitle().toUpperCase();
+      const maxTW = W - 120;
+      const titleWords = rawTitle.split(' ');
+      const titleLines: string[] = [];
+      let tLine = '';
+      for (const word of titleWords) {
+        const test = tLine ? tLine + ' ' + word : word;
+        if (ctx.measureText(test).width > maxTW && tLine) { titleLines.push(tLine); tLine = word; }
+        else { tLine = test; }
+      }
+      titleLines.push(tLine);
+      titleLines.forEach((line, i) => ctx.fillText(line, W / 2, 240 + i * 36));
+
+      const archetypeY = 240 + titleLines.length * 36;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillText((activeArchetype?.title || '').toUpperCase(), W / 2, archetypeY);
+      ctx.textAlign = 'left';
+
+      const statsY = archetypeY + 34;
+      const cW = (W - 80 - 20) / 3, cH = 96;
+      [
+        { label: 'GENRE SFEER', value: genreInfo.emoji + ' ' + genreInfo.label, color: '#10b981' },
+        { label: 'ENERGIE', value: calcEnergyAndVibe() + '%', color: '#00ffcc' },
+        { label: 'DEELNAME', value: calcParticipation() + '%', color: '#FF5050' },
+      ].forEach(({ label, value, color }, i) => {
+        const cx = 40 + i * (cW + 10);
+        ctx.fillStyle = 'rgba(255,255,255,0.03)'; rr(cx, statsY, cW, cH, 14); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1; rr(cx, statsY, cW, cH, 14); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = 'bold 8px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, cx + cW / 2, statsY + 22);
+        ctx.fillStyle = color;
+        ctx.font = 'bold 20px "Inter", system-ui, sans-serif';
+        ctx.fillText(value, cx + cW / 2, statsY + 62);
+        ctx.textAlign = 'left';
+      });
+
+      const radarY = statsY + cH + 22;
+      ctx.fillStyle = 'rgba(255,255,255,0.03)'; rr(40, radarY, W - 80, 196, 18); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,80,80,0.12)'; ctx.lineWidth = 1; rr(40, radarY, W - 80, 196, 18); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      ctx.fillText('CALIBRATIE RADAR', 60, radarY + 22);
+      const barAreaX = 165, barAreaW = W - barAreaX - 90;
+      [
+        { label: 'FILMDUUR', id: 'duration', color: '#8b5cf6' },
+        { label: 'IMMERSIE', id: 'immersion', color: '#06b6d4' },
+        { label: 'SOCIAAL', id: 'social', color: '#f43f5e' },
+        { label: 'PAUZES', id: 'breaks', color: '#f59e0b' },
+      ].forEach(({ label, id, color }, i) => {
+        const sy = radarY + 44 + i * 38;
+        const val = (answers[id] ?? 50) / 100;
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        ctx.fillText(label, 60, sy + 10);
+        ctx.fillStyle = 'rgba(255,255,255,0.07)'; rr(barAreaX, sy, barAreaW, 8, 4); ctx.fill();
+        ctx.fillStyle = color; rr(barAreaX, sy, Math.max(4, barAreaW * val), 8, 4); ctx.fill();
+        ctx.fillStyle = color; ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(val * 100) + '%', W - 50, sy + 10);
+        ctx.textAlign = 'left';
+      });
+
+      const divY = radarY + 210;
+      ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(40, divY, W - 80, 1);
+
+      const qrImg = new Image();
+      await new Promise<void>((res, rej) => { qrImg.onload = () => res(); qrImg.onerror = rej; qrImg.src = qrUrl; });
+      const qrSize = 155, qrY = divY + 22;
+      ctx.fillStyle = '#111111'; rr(40, qrY - 8, qrSize + 16, qrSize + 16, 14); ctx.fill();
+      ctx.drawImage(qrImg, 48, qrY, qrSize, qrSize);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN OM TE STARTEN', 40 + (qrSize + 16) / 2, qrY + qrSize + 22);
+
+      ctx.fillStyle = '#FF5050';
+      ctx.font = 'bold 26px "Inter", system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('VanBeresteyn', W - 40, qrY + 46);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText('WRAPPED EXPERIENCE 2025', W - 40, qrY + 66);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = '11px "Inter", system-ui, sans-serif';
+      const descWords = ('"' + (activeArchetype?.description || '') + '"').split(' ');
+      let dLine = '', dY = qrY + 100;
+      for (const word of descWords) {
+        const test = dLine ? dLine + ' ' + word : word;
+        if (ctx.measureText(test).width > 430 && dLine) {
+          ctx.fillText(dLine, W - 40, dY); dLine = word; dY += 17;
+          if (dY > qrY + qrSize) break;
+        } else { dLine = test; }
+      }
+      if (dLine) ctx.fillText(dLine, W - 40, dY);
+      ctx.textAlign = 'left';
+
+      const bl = ctx.createLinearGradient(0, 0, W, 0);
+      bl.addColorStop(0, 'rgba(255,80,80,0)'); bl.addColorStop(0.5, 'rgba(255,80,80,0.7)'); bl.addColorStop(1, 'rgba(255,80,80,0)');
+      ctx.fillStyle = bl; ctx.fillRect(0, H - 3, W, 3);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `vbn-wrapped-${sessionId}.png`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+      }, 'image/png');
+
+      setDownloadComplete(true);
+      setTimeout(() => setDownloadComplete(false), 3000);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/95 select-none touch-manipulation flex flex-col overflow-hidden text-white">
-      {/* Decorative background vectors */}
+      {/* Decorative background blobs */}
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-blue-900/5 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Floating control close trigger (top-right) */}
+      {/* Top-right controls */}
       <div className="absolute top-8 right-8 z-[220] flex items-center gap-3">
         {mode === 'slides' && (
-          <button
+          <InteractiveButton
             onClick={() => {
               setIsPaused(!isPaused);
               soundManager.play('CLICK', 0.2);
             }}
-            className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full text-xs font-mono font-bold tracking-widest uppercase border border-white/10 cursor-pointer text-white/70 hover:text-white transition-all shadow-md"
+            className="px-3 py-2 bg-white/5 rounded-full text-xs font-mono font-bold tracking-widest uppercase border border-white/10 text-white/70"
           >
             {isPaused ? '▶️ PLAY' : '⏸️ PAUZE'}
-          </button>
+          </InteractiveButton>
         )}
-        
-        <button
+
+        <InteractiveButton
           onClick={onClose}
-          className="p-3 bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/20 rounded-full text-white/60 hover:text-red-500 transition-all cursor-pointer shadow-lg z-[250]"
+          className="p-3 bg-white/5 border border-white/10 rounded-full text-white/60"
         >
           <X className="w-5 h-5" />
-        </button>
+        </InteractiveButton>
       </div>
 
       <AnimatePresence mode="wait">
         {mode === 'slides' ? (
-          /* ==================================== */
-          /* SLIDESHOW VIEW                       */
-          /* ==================================== */
+          /* ════════════════════════════════════════
+             SLIDESHOW VIEW
+          ════════════════════════════════════════ */
           <motion.div
             key="slides_mode"
             initial={{ opacity: 0 }}
@@ -938,16 +809,15 @@ if (socialVal > 60) {
             exit={{ opacity: 0 }}
             className="flex-1 flex flex-col justify-between max-w-lg w-full mx-auto relative h-full"
           >
-            {/* Story Progress Bars Bar */}
+            {/* Story progress bars */}
             <div className="flex gap-1.5 px-6 pt-10 absolute top-0 inset-x-0 z-[210]">
               {slides.map((_, index) => {
                 let width = '0%';
                 if (index < activeSlide) width = '100%';
                 if (index === activeSlide) width = `${slideProgress}%`;
-
                 return (
                   <div key={index} className="h-[2.5px] flex-1 bg-white/10 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-brand to-red-400 shadow-[0_0_8px_#ff4d4d]"
                       style={{ width, transition: index === activeSlide ? 'none' : 'width 0.15s ease' }}
                     />
@@ -956,7 +826,7 @@ if (socialVal > 60) {
               })}
             </div>
 
-            {/* Slide renderer stage */}
+            {/* Slide stage */}
             <div className="flex-1 flex items-center justify-center mt-10">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -972,9 +842,9 @@ if (socialVal > 60) {
               </AnimatePresence>
             </div>
 
-            {/* Tap/click helpers for navigating slide stories */}
+            {/* Side tap zones for gesture/touch slide navigation */}
             <div className="absolute inset-y-24 inset-x-0 flex justify-between z-[190] pointer-events-none">
-              <button 
+              <InteractiveButton
                 onClick={() => {
                   if (activeSlide > 0) {
                     setActiveSlide(activeSlide - 1);
@@ -982,10 +852,12 @@ if (socialVal > 60) {
                     soundManager.play('CLICK', 0.2);
                   }
                 }}
-                className="w-1/4 h-full pointer-events-auto cursor-w-resize"
-                title="Vorige Slide"
-              />
-              <button 
+                className="w-1/4 h-full pointer-events-auto cursor-w-resize bg-transparent"
+              >
+                <span />
+              </InteractiveButton>
+
+              <InteractiveButton
                 onClick={() => {
                   if (activeSlide < slides.length - 1) {
                     setActiveSlide(activeSlide + 1);
@@ -995,14 +867,15 @@ if (socialVal > 60) {
                     setMode('summary');
                   }
                 }}
-                className="w-1/4 h-full pointer-events-auto cursor-e-resize"
-                title="Volgende Slide"
-              />
+                className="w-1/4 h-full pointer-events-auto cursor-e-resize bg-transparent"
+              >
+                <span />
+              </InteractiveButton>
             </div>
-            
-            {/* Slide Navigation Buttons At bottom */}
+
+            {/* Bottom navigation bar */}
             <div className="flex justify-between items-center px-8 pb-10 z-[210]">
-              <button
+              <InteractiveButton
                 disabled={activeSlide === 0}
                 onClick={() => {
                   setActiveSlide(activeSlide - 1);
@@ -1010,18 +883,18 @@ if (socialVal > 60) {
                   soundManager.play('CLICK', 0.2);
                 }}
                 className={cn(
-                  "p-2.5 rounded-full glass border border-white/10 text-white/50 hover:text-white transition-colors cursor-pointer",
-                  activeSlide === 0 && "opacity-20 cursor-not-allowed"
+                  "p-2.5 rounded-full glass border border-white/10 text-white/50",
+                  activeSlide === 0 && "opacity-20"
                 )}
               >
                 <ArrowLeft className="w-4 h-4" />
-              </button>
+              </InteractiveButton>
 
               <span className="font-mono text-[10px] tracking-widest text-white/40">
                 STORY {activeSlide + 1} / {slides.length}
               </span>
 
-              <button
+              <InteractiveButton
                 onClick={() => {
                   if (activeSlide < slides.length - 1) {
                     setActiveSlide(activeSlide + 1);
@@ -1031,510 +904,251 @@ if (socialVal > 60) {
                     setMode('summary');
                   }
                 }}
-                className="p-2.5 rounded-full border border-brand bg-brand text-black font-black hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="p-2.5 rounded-full border border-brand bg-brand text-black font-black"
               >
                 <ArrowRight className="w-4 h-4 fill-current" />
-              </button>
+              </InteractiveButton>
             </div>
           </motion.div>
+
         ) : (
-          /* ==================================== */
-          /* SUMMARY DASHBOARD GRID VIEW          */
-          /* ==================================== */
+          /* ════════════════════════════════════════
+             EXPORT & SHARE — FINAL SCREEN
+          ════════════════════════════════════════ */
           <motion.div
             key="summary_mode"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -30 }}
-            className="flex-1 w-full max-w-5xl mx-auto px-6 py-10 md:py-16 overflow-y-auto custom-scrollbar relative h-full flex flex-col justify-between"
+            className="flex-1 w-full max-w-5xl mx-auto px-6 py-10 md:py-14 overflow-y-auto custom-scrollbar relative h-full flex flex-col"
           >
-            <div>
-              {/* Top summary title */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/5 pb-8 mb-10 gap-6">
-                <div>
-                  <span className="px-3.5 py-1 text-[9px] font-mono font-black uppercase text-brand tracking-widest bg-brand/10 border border-brand/20 rounded-md">
-                    CO-OP TRANSITIEDATA HUB
-                  </span>
-                  <h1 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight text-white leading-none mt-3">
-                    MIJN VERZAMELDE <span className="text-brand">INSIGHTS</span>
-                  </h1>
-                  <p className="text-xs text-white/40 mt-2 font-mono uppercase tracking-widest">
-                    Live inzichten • ververst bij alles wat je doet
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      soundManager.play('SUCCESS', 0.3);
-                      setActiveSlide(0);
-                      setSlideProgress(0);
-                      setMode('slides');
-                    }}
-                    className="px-5 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 font-display font-bold uppercase text-[10px] tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Play className="w-4 h-4" /> REPLAY STORY
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      soundManager.play('SUCCESS', 0.5);
-                      navigator.clipboard.writeText(`Ik ben gecalibreerd als de ${generateUserTitle()} in de VanBeresteyn Experience! Met een cultuuraandeel van ${calcParticipation()}%! Probeer het zelf op de development game console.`).then(() => {
-                        soundManager.play('CLICK', 0.3);
-                      }).catch(() => {});
-                    }}
-                    className="px-5 py-3 bg-brand text-black font-display font-black uppercase text-[10px] tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-brand/10"
-                  >
-                    <Share2 className="w-4 h-4" fill-current /> COPIEER DEEL-TEKST
-                  </button>
-                </div>
-              </div>
-
-              {/* Bento Grid Summary statistics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                
-                {/* ID Card card */}
-                <div className="glass border border-brand/20 bg-brand/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div className="flex justify-between items-start">
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black">
-                      JOUW PROFIEL
-                    </span>
-                    <div className="w-10 h-10 bg-brand/25 rounded-2xl flex items-center justify-center text-2xl font-mono border border-brand/45">
-                      {activeArchetype?.emoji}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-display font-black uppercase text-white tracking-tight leading-none mb-1">
-                      {generateUserTitle()}
-                    </h3>
-                    <p className="text-[10px] font-mono text-white/35 uppercase tracking-widest mb-3">
-                      ROLE PROFILE: {activeArchetype?.title}
-                    </p>
-                    <p className="text-[10px] text-white/60 leading-relaxed font-light line-clamp-3">
-                      {activeArchetype?.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Favorite Vibe Genre card */}
-                <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold">
-                        GEKOZEN GENRE SFEER
-                      </span>
-                      <span className="text-3xl">{genreInfo.emoji}</span>
-                    </div>
-                    
-                    {hasGenre ? (
-                      <div>
-                        <h4 className="text-xl font-display font-black uppercase tracking-tight text-white mb-1.5">
-                          {genreInfo.label} Vibe
-                        </h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-light">
-                          {genreInfo.text} Deze selectie geeft kleur aan de volledige calibratie.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center py-4 text-center">
-                        <Lock className="w-5 h-5 text-brand/40 animate-pulse mb-2" />
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                          [ Keep exploring to unlock ]
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {!hasGenre && (
-                    <button
-                      onClick={() => {
-                        soundManager.play('CLICK', 0.3);
-                        setStep('genre');
-                      }}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 font-mono text-[9px] uppercase font-bold tracking-widest border border-white/10 rounded-xl text-center w-full cursor-pointer mt-4"
-                    >
-                      Kies Genre Sfeer
-                    </button>
-                  )}
-                </div>
-
-                {/* Communication and Voice Analytics */}
-                <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold">
-                        HOE JIJ COMMUNICEERT
-                      </span>
-                      <span className="text-2xl">{hasVoice ? '🎙️' : '🔒'}</span>
-                    </div>
-
-                    {hasVoice ? (
-                      <div>
-                        <h4 className="text-lg font-display font-black uppercase tracking-tight text-white mb-1.5">
-                          {getVocalPersona()?.title}
-                        </h4>
-                        <p className="text-[11px] text-white/50 leading-relaxed font-light line-clamp-3">
-                          {getVocalPersona()?.summary}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center py-4 text-center">
-                        <Lock className="w-5 h-5 text-brand/40 animate-pulse mb-2" />
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                          Geen feedback gegeven
-                        </p>
-                        <p className="text-[10px] text-white/40 mt-1 leading-normal px-2">
-                          Klik op de knop hieronder als je nog feedback wilt geven!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {!hasVoice && (
-                    <button
-                      onClick={() => {
-                        soundManager.play('CLICK', 0.3);
-                        setStep('voice_feedback');
-                      }}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 font-mono text-[9px] uppercase font-bold tracking-widest border border-white/10 rounded-xl text-center w-full cursor-pointer mt-4"
-                    >
-                      Ik wil nog feedback geven!
-                    </button>
-                  )}
-                </div>
-
-                {/* Calibration Energy score indicator card */}
-                <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold block mb-4">
-                      ENERGIE & VIBE RATING
-                    </span>
-                    
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-5xl font-display font-black uppercase tracking-tight text-[#00ffcc] font-mono leading-none">
-                        {calcEnergyAndVibe()}%
-                      </span>
-                      <span className="text-[10px] text-emerald-400 font-mono tracking-widest font-black uppercase">
-                        ACTIVE VIBE
-                      </span>
-                    </div>
-                    <p className="text-xs text-white/40 leading-relaxed font-light">
-                      Berekend op basis van actieve schuifregelaars en gamified streaks. Een {calcEnergyAndVibe() > 70 ? 'zeer hoog energetisch spectrum' : 'bedachtzame, lage-frequentie aura'}.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Extreme sliders card */}
-                <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold block mb-4">
-                      Jouw opvallendste voorkeuren
-                    </span>
-
-                    {hasAnswers && getMostExtremeCalibration() ? (
-                      <div>
-                        <h4 className="text-lg font-display font-black uppercase tracking-tight text-white mb-1.5 flex items-center gap-1.5">
-                          <Zap className="w-4 h-4 text-[#ff4d4d]" />
-                          <span>{getMostExtremeCalibration()?.label}</span>
-                        </h4>
-                        <p className="text-xs text-white/55 leading-relaxed font-light">
-                          {getMostExtremeCalibration()?.desc} Je stemt niet neutraal op deze stelling, ideaal voor een geprononceerde cultuurvoorkeur.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center py-4 text-center">
-                        <Lock className="w-5 h-5 text-brand/40 animate-pulse mb-2" />
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                          [ Locked insight ]
-                        </p>
-                        <p className="text-[10px] text-white/40 mt-1">
-                          Sleep de schuifregelaars uiterst om te unlocken
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Achievements progression index card */}
-                <div className="glass border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between shadow-xl min-h-[220px]">
-                  <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-white/30 font-bold block mb-4">
-                      DEELNAME VOLTOOIING
-                    </span>
-
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-5xl font-display font-black uppercase text-brand tracking-tight font-mono leading-none">
-                        {calcParticipation()}%
-                      </span>
-                      <span className="text-[9px] font-mono text-purple-400 font-bold uppercase tracking-wider">
-                        COMPLETED SKELETON
-                      </span>
-                    </div>
-
-                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-4 relative">
-                      <div 
-                        className="h-full bg-brand rounded-full"
-                        style={{ width: `${calcParticipation()}%` }}
-                      />
-                    </div>
-                    
-                    <p className="text-[10px] text-white/40 leading-normal font-light">
-                      Voltooi de sfeer selectie, alle schuifregelaars en laat je audio feedback achter voor de felbegeerde 100%!
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* BRAND NEW PERSONALIZED WRAPPED MATRIX TABLE */}
-              <div className="glass border border-white/5 rounded-[2.5rem] p-6 md:p-8 mb-8 bg-black/50 shadow-2xl relative overflow-hidden text-left">
-                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-brand/10 via-brand/40 to-brand/10" />
-                
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-5 mb-6">
-                  <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-brand font-black border border-brand/20 px-2.5 py-0.5 bg-brand/5 rounded-full inline-block mb-1.5">
-                      JOUW OVERZICHT 📊
-                    </span>
-                    <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight">
-                      MIJN CO-OP WRAPPED MATRIX
-                    </h3>
-                    <p className="text-xs text-white/50 font-light mt-1">
-                      Een exact overzicht van de variabelen die voortvloeien uit jouw selecties, gekoppeld aan 100% dynamisch berekende inzichten.
-                    </p>
-                  </div>
-                </div>
-
-                {/* The Responsive Modern Table wrapper */}
-                <div className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-white/[0.01]">
-                  <table className="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-white/5 font-mono text-[9px] uppercase text-white/40 bg-white/[0.02]">
-                        <th className="py-4 px-5 font-bold tracking-widest w-[25%]">VARIABELE</th>
-                        <th className="py-4 px-5 font-bold tracking-widest w-[20%]">GEKOZEN WAARDE</th>
-                        <th className="py-4 px-5 font-bold tracking-widest w-[20%]">STATUS / METRISCH</th>
-                        <th className="py-4 px-5 font-bold tracking-widest w-[35%]">GEPERSONALISEERD INZICHT</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-xs text-white">
-                      {wrappedTableData.map((row) => (
-                        <tr key={row.id} className="hover:bg-white/[0.02] transition-colors group">
-                          {/* 1. Variable Name & Icon */}
-                          <td className="py-4 px-5 font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                                {row.icon}
-                              </div>
-                              <div>
-                                <div className="text-white font-display font-bold uppercase tracking-wide text-[11px]">{row.label}</div>
-                                <div className="text-[10px] text-white/30 font-mono font-medium">{row.category}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* 2. Selection / Percentage */}
-                          <td className="py-4 px-5">
-                            {row.isSlider ? (
-                              <div className="flex flex-col gap-1.5 max-w-[140px]">
-                                <div className="font-mono font-bold text-white flex items-center gap-1.5">
-                                  <span>{row.value}%</span>
-                                  <span className="text-[8px] text-brand uppercase font-black tracking-widest">WEIGHT</span>
-                                </div>
-                                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
-                                  <div 
-                                    className="h-full bg-brand rounded-full"
-                                    style={{ width: `${row.value}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="font-mono text-[11px] text-white/85 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 inline-block font-bold">
-                                {row.value}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* 3. Badge Indicators */}
-                          <td className="py-4 px-5">
-                            <span className={cn(
-                              "px-2.5 py-1 rounded-full text-[9px] font-mono tracking-widest font-black uppercase border inline-block",
-                              row.badgeColor
-                            )}>
-                              {row.badgeText}
-                            </span>
-                          </td>
-
-                          {/* 4. Logically Derived Insight */}
-                          <td className="py-4 px-5 text-[11px] text-white/55 leading-relaxed font-light">
-                            {row.insight}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* TAIILORED RECOMMENDATIONS GRID */}
-              <div className="glass border border-white/5 rounded-[2.5rem] p-6 md:p-8 mb-8 bg-black/50 shadow-2xl relative overflow-hidden text-left">
-                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-brand/10 via-brand/40 to-brand/10" />
-                
-                <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-2.5 py-0.5 bg-[#00ffcc]/5 rounded-full inline-block mb-1.5">
-                  Wat goed past bij jou
-                </span>
-                <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight -mt-0.5">
-                  Aanbevelingen voor jou
-                </h3>
-                <p className="text-xs text-white/50 font-light mt-1 mb-6">
-                  Op basis van je gekozen sfeer, leeftijd en schuifregelaars hebben we de volgende drie unieke aanbevelingen specifiek voor jou afgestemd.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {getRecommendations().map((rec, index) => (
-                    <div 
-                      key={index} 
-                      className="glass border border-white/5 hover:border-brand/20 bg-white/[0.01] hover:bg-white/[0.02] p-5 rounded-2xl flex flex-col justify-between group transition-all relative overflow-hidden shadow-md"
-                    >
-                      {/* Decorative index indicator */}
-                      <div className="absolute top-4 right-4 font-mono text-[11px] font-black text-white/10 group-hover:text-brand/20 transition-colors">
-                        0{index + 1}
-                      </div>
-
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                          {/* Type Tag */}
-                          <span className="font-mono text-[8px] text-white/30 uppercase tracking-widest font-black block mb-3">
-                            [{rec.type}]
-                          </span>
-
-                          {/* Recommendation Title */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl group-hover:scale-110 transition-transform">{rec.icon}</span>
-                            <h4 className="text-xs font-display font-black uppercase tracking-wide text-white leading-tight">
-                              {rec.title}
-                            </h4>
-                          </div>
-
-                          {/* Recommendation Description */}
-                          <p className="text-[10px] text-white/45 leading-relaxed font-light mt-1">
-                            {rec.desc}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Small visual confirmation button */}
-                      <div className="border-t border-white/5 pt-3.5 mt-4 flex items-center justify-between text-[8px] font-mono font-black uppercase tracking-wider text-white/20 group-hover:text-brand transition-colors">
-                        <span>Aanbevolen actie</span>
-                        <ArrowRight className="w-3 h-3 text-current transform group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* LIVE VIBE TUNING & REAL-TIME CALIBRATION CONSOLE CARD */}
-              <div className="glass border-2 border-brand/20 rounded-[2.5rem] p-6 md:p-8 mb-8 bg-black/40 shadow-[0_0_50px_rgba(255,77,77,0.08)] relative overflow-hidden text-left">
-                {/* Decorative scanning line and title details */}
-                <div className="absolute top-0 inset-x-0 h-[2px] bg-brand/35 animate-scan" style={{ animationDuration: '5s' }} />
-                
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6 mb-6">
-                  <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-[#00ffcc] font-black border border-[#00ffcc]/20 px-2.5 py-0.5 bg-[#00ffcc]/5 rounded-full inline-block mb-2">
-                      {/* REAL-TIME SIMU-LAB 🧪 */}
-                    </span>
-                    <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white tracking-tight flex items-center gap-2">
-                       Jouw Persoonlijke Vibe Scan
-                    </h3>
-                    <p className="text-xs text-white/50 font-light leading-relaxed">
-                      {/* Wissel direct van genre of versleep de schuifregelaars hieronder om je Wrapped DNA-uitkomst, energietype en archetype in real-time te zien kantelen! */}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left Column: Sferische Matrix (Genre Chooser) */}
-                  <div className="flex flex-col gap-4">
-                    <span className="font-mono text-[10px] text-white/35 uppercase tracking-widest font-black flex items-center gap-1.5 mb-1 text-left">
-                    Ontdek Genres
-                    </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {Object.entries(GENRE_STYLES).filter(([key]) => key !== 'none').map(([key, info]) => {
-                        const isSelected = selectedGenres.includes(key);
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              toggleGenre(key);
-                            }}
-                            className={cn(
-                              "p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1 cursor-pointer transition-all border",
-                              isSelected 
-                                ? "bg-gradient-to-tr from-brand/20 to-brand/5 border-brand text-white shadow-lg shadow-brand/5" 
-                                : "bg-white/[0.01] border-white/5 text-white/60 hover:text-white hover:bg-white/[0.04]"
-                            )}
-                          >
-                            <span className="text-2xl mb-1">{info.emoji}</span>
-                            <span className="text-[10px] font-display font-black uppercase tracking-wider">{info.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Right Column: Calibration Parameters (Sliders Tuning) */}
-                  <div className="flex flex-col gap-4">
-                    <span className="font-mono text-[10px] text-white/35 uppercase tracking-widest font-black flex items-center gap-1.5 mb-1 text-left">
-                      Pas Je Voorkeuren Aan
-                    </span>
-                    <div className="flex flex-col gap-4">
-                      {[
-                        { id: 'duration', label: 'Filmduur-Voorkeur', min: 'Kort', max: 'Episch' },
-                        { id: 'immersion', label: 'Immersie Spectrum', min: 'Passief', max: 'Meeslepend' },
-                        { id: 'social', label: 'Sociaal Engagement', min: 'Solo', max: 'Sociaal' },
-                        { id: 'breaks', label: 'Reflectie-Pauzes', min: 'Continu', max: 'Gedoseerd' }
-                      ].map((param) => {
-                        const val = answers[param.id] ?? 50;
-                        return (
-                          <div key={param.id} className="p-3 bg-white/[0.01] border border-white/5 rounded-2xl">
-                            <div className="flex justify-between items-center text-[10px] font-bold uppercase mb-1.5 tracking-wider">
-                              <span className="text-white/80">{param.label}</span>
-                              <span className="text-brand font-mono font-black">{val}%</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono text-[8px] text-white/30 uppercase tracking-widest">{param.min}</span>
-                              <input 
-                                type="range" 
-                                min="0" 
-                                max="100" 
-                                value={val}
-                                onChange={(e) => {
-                                  const newVal = parseInt(e.target.value, 10);
-                                  setAnswer(param.id, newVal);
-                                }}
-                                className="flex-1 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand animate-none"
-                              />
-                              <span className="font-mono text-[8px] text-white/30 uppercase tracking-widest">{param.max}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Header */}
+            <div className="text-center mb-10">
+              <span className="px-3.5 py-1 text-[9px] font-mono font-black uppercase text-brand tracking-widest bg-brand/10 border border-brand/20 rounded-md inline-block mb-3">
+                EXPORTEER & DEEL 📥
+              </span>
+              <h1 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight text-white leading-none">
+                JOUW <span className="text-brand">WRAPPED CARD</span>
+              </h1>
+              <p className="text-xs text-white/40 mt-2 font-mono uppercase tracking-widest">
+                Download en deel jouw persoonlijke resultaten
+              </p>
             </div>
 
-            {/* Bottom consolidated feedback actions */}
-            <div className="border-t border-white/5 pt-8 mt-10 text-center flex flex-col sm:flex-row justify-between items-center gap-6 font-mono text-[10px] text-white/30">
+            {/* Export Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+              className="glass border border-white/5 rounded-[2.5rem] p-6 md:p-10 bg-black/50 shadow-2xl relative overflow-hidden flex-1"
+            >
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-brand/30 animate-scan" style={{ animationDuration: '6s' }} />
 
-              <button
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start h-full">
+
+                {/* Left: Card Preview */}
+                <div>
+                  <span className="font-mono text-[9px] text-white/30 uppercase tracking-widest font-black block mb-3">
+                    Kaart Voorbeeld
+                  </span>
+
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="relative rounded-3xl overflow-hidden border border-brand/25 shadow-2xl shadow-brand/10 bg-[#090909]"
+                    style={{ aspectRatio: '4/5' }}
+                  >
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand to-transparent" />
+                    <div className="p-5 flex flex-col h-full">
+                      <div className="flex justify-between items-center mb-5">
+                        <span className="font-mono text-[8px] font-black uppercase text-brand tracking-widest bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-md">
+                          VBN WRAPPED
+                        </span>
+                        <span className="font-mono text-[7px] text-white/20 uppercase tracking-widest">
+                          {sessionId.substring(0, 14)}
+                        </span>
+                      </div>
+
+                      <div className="text-center mb-4">
+                        <motion.div
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                          className="text-5xl mb-2"
+                        >
+                          {activeArchetype?.emoji}
+                        </motion.div>
+                        <h3 className="text-sm font-display font-black uppercase text-brand tracking-tight leading-tight">
+                          {generateUserTitle()}
+                        </h3>
+                        <p className="font-mono text-[8px] text-white/35 uppercase tracking-widest mt-0.5">
+                          {activeArchetype?.title}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5 mb-4">
+                        {[
+                          { label: 'GENRE', value: genreInfo.emoji + ' ' + genreInfo.label, color: 'text-emerald-400' },
+                          { label: 'ENERGIE', value: calcEnergyAndVibe() + '%', color: 'text-[#00ffcc]' },
+                          { label: 'SCORE', value: calcParticipation() + '%', color: 'text-brand' },
+                        ].map((s) => (
+                          <div key={s.label} className="bg-white/[0.03] border border-white/5 rounded-xl p-2 text-center">
+                            <div className="font-mono text-[6px] text-white/25 uppercase tracking-widest mb-0.5">{s.label}</div>
+                            <div className={cn('font-mono font-black text-[10px]', s.color)}>{s.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 mb-5 flex-1">
+                        {[
+                          { label: 'Duur', id: 'duration', color: '#8b5cf6' },
+                          { label: 'Immersie', id: 'immersion', color: '#06b6d4' },
+                          { label: 'Sociaal', id: 'social', color: '#f43f5e' },
+                          { label: 'Pauzes', id: 'breaks', color: '#f59e0b' },
+                        ].map((s) => (
+                          <div key={s.id} className="flex items-center gap-2">
+                            <span className="font-mono text-[6px] text-white/25 uppercase w-10 shrink-0">{s.label}</span>
+                            <div className="flex-1 h-1 bg-white/8 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${answers[s.id] ?? 50}%`, backgroundColor: s.color }} />
+                            </div>
+                            <span className="font-mono text-[7px] font-black shrink-0" style={{ color: s.color }}>
+                              {answers[s.id] ?? 50}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-end justify-between mt-auto">
+                        <div className="flex flex-col items-center gap-1">
+                          {qrDataUrl ? (
+                            <img src={qrDataUrl} alt="QR" className="rounded-lg opacity-75" style={{ width: 52, height: 52 }} />
+                          ) : (
+                            <div className="w-[52px] h-[52px] rounded-lg bg-white/5 border border-white/10 animate-pulse" />
+                          )}
+                          <span className="font-mono text-[5px] text-white/25 uppercase tracking-widest">SCAN MIJ</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[11px] font-display font-black text-brand">VanBeresteyn</div>
+                          <div className="font-mono text-[6px] text-white/20 uppercase tracking-widest">WRAPPED 2025</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+                  </motion.div>
+                </div>
+
+                {/* Right: QR + Actions */}
+                <div className="flex flex-col gap-8">
+
+                  {/* QR code */}
+                  <div>
+                    <span className="font-mono text-[9px] text-white/30 uppercase tracking-widest font-black block mb-3">
+                      Scan Op Je Telefoon
+                    </span>
+                    <div className="flex items-start gap-5">
+                      <div className="glass border border-brand/20 rounded-2xl p-3 bg-black/60 flex flex-col items-center gap-2 shrink-0">
+                        {qrDataUrl ? (
+                          <motion.img
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            src={qrDataUrl}
+                            alt="QR code"
+                            className="rounded-lg"
+                            style={{ width: 130, height: 130 }}
+                          />
+                        ) : (
+                          <div className="w-[130px] h-[130px] rounded-lg bg-white/5 border border-white/10 animate-pulse" />
+                        )}
+                        <span className="font-mono text-[8px] text-white/35 uppercase tracking-widest">VBN Experience</span>
+                      </div>
+                      <div className="flex-1 pt-1">
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <div className="w-7 h-7 bg-brand/10 border border-brand/20 rounded-xl flex items-center justify-center shrink-0">
+                            <Smartphone className="w-3.5 h-3.5 text-brand" />
+                          </div>
+                          <span className="text-xs font-display font-bold uppercase text-white/80">Scan & Deel</span>
+                        </div>
+                        <p className="text-[11px] text-white/40 leading-relaxed font-light">
+                          Scan deze QR code om direct toegang te krijgen tot de VanBeresteyn ervaring op je eigen telefoon.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Download button */}
+                  <div className="flex flex-col gap-3">
+                    <InteractiveButton
+                      onClick={() => {
+                        if (!isDownloading) {
+                          soundManager.play('SUCCESS', 0.3);
+                          downloadExportCard();
+                        }
+                      }}
+                      disabled={isDownloading}
+                      className={cn(
+                        'w-full rounded-2xl font-display font-black uppercase text-sm tracking-widest',
+                        downloadComplete
+                          ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                          : isDownloading
+                            ? 'bg-brand/50 text-black/60'
+                            : 'bg-brand text-black shadow-lg shadow-brand/20'
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-3 px-6 py-4 w-full">
+                        {isDownloading ? (
+                          <><RefreshCw className="w-4 h-4 animate-spin" /><span>Genereren...</span></>
+                        ) : downloadComplete ? (
+                          <span>✓ Gedownload!</span>
+                        ) : (
+                          <><Download className="w-4 h-4" /><span>Download als Afbeelding</span></>
+                        )}
+                      </div>
+                    </InteractiveButton>
+
+                    <InteractiveButton
+                      onClick={() => {
+                        soundManager.play('SUCCESS', 0.5);
+                        navigator.clipboard.writeText(
+                          `Ik ben gecalibreerd als de ${generateUserTitle()} in de VanBeresteyn Experience! Met een cultuuraandeel van ${calcParticipation()}%! Probeer het zelf op de development game console.`
+                        ).then(() => { soundManager.play('CLICK', 0.3); }).catch(() => {});
+                      }}
+                      className="w-full px-5 py-3 bg-white/5 border border-white/10 text-white/70 font-display font-bold uppercase text-[10px] tracking-widest rounded-2xl"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Kopieer Deel-Tekst</span>
+                      </div>
+                    </InteractiveButton>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Bottom actions */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-8 pb-4">
+              <InteractiveButton
+                onClick={() => {
+                  soundManager.play('SUCCESS', 0.3);
+                  setActiveSlide(0);
+                  setSlideProgress(0);
+                  setMode('slides');
+                }}
+                className="px-6 py-3 bg-white/5 border border-white/10 text-white/80 font-display font-bold uppercase text-[10px] tracking-widest rounded-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <Play className="w-4 h-4" />
+                  <span>Replay Story</span>
+                </div>
+              </InteractiveButton>
+
+              <InteractiveButton
                 onClick={() => {
                   soundManager.play('SUCCESS', 0.5);
                   onClose();
                 }}
-                className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer font-black"
+                className="px-8 py-3.5 bg-brand text-black font-display font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg"
               >
-                Opnieuw afspelen
-              </button>
+                Opnieuw Afspelen
+              </InteractiveButton>
             </div>
           </motion.div>
         )}

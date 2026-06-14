@@ -13,7 +13,7 @@ const GENRES = [
     image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800' 
   },
   { 
-    id: 'sports', 
+    id: 'sport', 
     label: 'Sport', 
     color: 'from-blue-950/80', 
     image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800' 
