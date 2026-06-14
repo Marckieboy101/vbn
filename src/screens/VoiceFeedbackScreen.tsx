@@ -240,6 +240,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const netErrRef      = useRef(0);
   const committedRawRef = useRef('');
   const committedCensoredRef = useRef('');
+  const hadFatalErrorRef = useRef(false);
 
   useEffect(() => { phaseRef.current    = phase;     }, [phase]);
   useEffect(() => { isMutedRef.current  = isMuted;   }, [isMuted]);
@@ -326,28 +327,36 @@ export const VoiceFeedbackScreen: React.FC = () => {
       setMicStatus('listening');
     };
 
+    // Track the highest result index committed this session so we never
+    // re-process already-finalized results if Chrome fires events unexpectedly.
+    let lastCommittedIndex = -1;
+
     rec.onresult = (event: any) => {
-      let sessionFinal  = '';
-      let sessionInterim = '';
-      for (let i = 0; i < event.results.length; i++) {
+      let newFinals = '';
+      let currentInterim = '';
+
+      const startIdx = Math.max(event.resultIndex, lastCommittedIndex + 1);
+      for (let i = startIdx; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          sessionFinal += (sessionFinal ? ' ' : '') + t.trim();
+          newFinals += (newFinals ? ' ' : '') + t.trim();
+          lastCommittedIndex = i;
         } else {
-          sessionInterim = t.trim(); // last interim hypothesis
+          currentInterim = t.trim();
         }
       }
 
-      const fullRaw = [committedRawRef.current, sessionFinal].filter(Boolean).join(' ');
-      const { out: censored, matches } = censorText(fullRaw, blockedWords, modAction);
-      const { out: censoredInterim } = censorText(sessionInterim, blockedWords, modAction);
+      if (newFinals) {
+        const fullRaw = [committedRawRef.current, newFinals].filter(Boolean).join(' ');
+        const { out: censored, matches } = censorText(fullRaw, blockedWords, modAction);
+        committedRawRef.current      = fullRaw;
+        committedCensoredRef.current = censored;
+        setRawCommitted(fullRaw);
+        setCommittedText(censored);
+        setProfanityMatches(matches);
+      }
 
-      committedRawRef.current      = fullRaw;
-      committedCensoredRef.current = censored;
-
-      setRawCommitted(fullRaw);
-      setCommittedText(censored);
-      setProfanityMatches(matches);
+      const { out: censoredInterim } = censorText(currentInterim, blockedWords, modAction);
       setInterimText(censoredInterim);
     };
 
@@ -355,22 +364,22 @@ export const VoiceFeedbackScreen: React.FC = () => {
       const e = event.error as string;
       if (e === 'not-allowed') {
         setMicError('Microfoon geweigerd — controleer browser instellingen.');
-        setMicStatus('error'); stoppedRef.current = true;
+        setMicStatus('error'); stoppedRef.current = true; hadFatalErrorRef.current = true;
         setPhase('ask'); phaseRef.current = 'ask'; releaseMic();
       } else if (e === 'audio-capture') {
         setMicError('Microfoon niet bereikbaar — controleer de aansluiting.');
-        setMicStatus('error'); stoppedRef.current = true;
+        setMicStatus('error'); stoppedRef.current = true; hadFatalErrorRef.current = true;
         setPhase('ask'); phaseRef.current = 'ask'; releaseMic();
       } else if (e === 'service-not-allowed') {
         setMicError('Spraakherkenning geblokkeerd — open via HTTPS of localhost.');
-        setMicStatus('error'); stoppedRef.current = true;
+        setMicStatus('error'); stoppedRef.current = true; hadFatalErrorRef.current = true;
         setPhase('ask'); phaseRef.current = 'ask'; releaseMic();
       } else if (e === 'network') {
         netErrRef.current += 1;
         if (netErrRef.current >= 3) {
           setMicError('Geen verbinding met Google spraakservers. Probeer typen als alternatief.');
           setMicStatus('error');
-          stoppedRef.current = true;
+          stoppedRef.current = true; hadFatalErrorRef.current = true;
         }
         // else: onend will fire and attempt silent restart
       }
@@ -378,20 +387,18 @@ export const VoiceFeedbackScreen: React.FC = () => {
     };
 
     rec.onend = () => {
-      // Commit the session's finals to history before restarting
       setInterimText('');
 
       if (phaseRef.current === 'recording' && !isMutedRef.current && !stoppedRef.current) {
-        // Restart seamlessly — do NOT change micStatus here.
-        // The user should not see any "reconnecting" flash during normal Chrome
-        // no-speech timeouts. We just silently spin up a new session.
+        // Restart seamlessly after Chrome's no-speech timeout.
         restartRef.current = setTimeout(() => {
           restartRef.current = null;
           if (phaseRef.current === 'recording' && !isMutedRef.current && !stoppedRef.current) {
             startEngine(blockedWords, modAction);
           }
         }, 300);
-      } else {
+      } else if (!hadFatalErrorRef.current) {
+        // Don't override 'error' status that onerror already set.
         setMicStatus(isMutedRef.current ? 'paused' : 'idle');
       }
     };
@@ -409,9 +416,15 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
   // ── Recording controls ────────────────────────────────────────────────────
 
+  const customBlockedWordsRef = useRef(customBlockedWords);
+  const moderationActionRef   = useRef(moderationAction);
+  useEffect(() => { customBlockedWordsRef.current = customBlockedWords; }, [customBlockedWords]);
+  useEffect(() => { moderationActionRef.current   = moderationAction;   }, [moderationAction]);
+
   const startMicRecording = useCallback(async (existingStream?: MediaStream) => {
-    stoppedRef.current = false;
-    netErrRef.current  = 0;
+    stoppedRef.current      = false;
+    netErrRef.current       = 0;
+    hadFatalErrorRef.current = false;
     setMicError(null);
     setIsMuted(false); isMutedRef.current = false;
     setPhase('recording'); phaseRef.current = 'recording';
@@ -420,8 +433,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
     const stream = existingStream ?? await acquireMic();
     if (!stream) { setPhase('ask'); phaseRef.current = 'ask'; return; }
 
-    startEngine(customBlockedWords, moderationAction);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    startEngine(customBlockedWordsRef.current, moderationActionRef.current);
   }, [acquireMic, startEngine]);
 
   const startFreshMic = useCallback(() => {
@@ -452,39 +464,38 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
   // Switch to mic mode: carry typed text as committed baseline, then start mic
   const switchToMic = useCallback(() => {
-    // Commit whatever was typed so the mic appends to it
     const typed = keyboardText.trim();
     committedRawRef.current      = typed;
     committedCensoredRef.current = typed;
     setRawCommitted(typed);
     setCommittedText(typed);
     setInputMode('mic');
-    stoppedRef.current = false;
-    netErrRef.current  = 0;
+    stoppedRef.current       = false;
+    netErrRef.current        = 0;
+    hadFatalErrorRef.current = false;
     setMicError(null);
     setPhase('recording'); phaseRef.current = 'recording';
     soundManager.play('SUCCESS', 0.2);
     acquireMic().then(stream => {
       if (!stream) return;
-      startEngine(customBlockedWords, moderationAction);
+      startEngine(customBlockedWordsRef.current, moderationActionRef.current);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acquireMic, startEngine, keyboardText, customBlockedWords, moderationAction]);
+  }, [acquireMic, startEngine, keyboardText]);
 
   const toggleMute = useCallback(() => {
     if (isMuted) {
       setIsMuted(false); isMutedRef.current = false;
-      stoppedRef.current = false;
+      stoppedRef.current       = false;
+      hadFatalErrorRef.current = false;
       soundManager.play('SUCCESS', 0.2);
-      startEngine(customBlockedWords, moderationAction);
+      startEngine(customBlockedWordsRef.current, moderationActionRef.current);
     } else {
       setIsMuted(true); isMutedRef.current = true;
       stopEngine(true);
       setMicStatus('paused');
       setInterimText('');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMuted, stopEngine, startEngine, customBlockedWords, moderationAction]);
+  }, [isMuted, stopEngine, startEngine]);
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -743,7 +754,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                           soundManager.play('SUCCESS', 0.2);
                           if (phaseRef.current === 'recording' && !stoppedRef.current) {
                             stopEngine(false); stoppedRef.current = false;
-                            startEngine(customBlockedWords, moderationAction);
+                            startEngine(customBlockedWordsRef.current, moderationActionRef.current);
                           }
                         }}
                           className={cn(
@@ -1095,8 +1106,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
                       setKeyboardText(''); setTimeLeft(60);
                       setPhase('recording'); phaseRef.current = 'recording';
                       if (inputMode === 'mic') {
-                        stoppedRef.current = false; netErrRef.current = 0;
-                        acquireMic().then(s => s && startEngine(customBlockedWords, moderationAction));
+                        stoppedRef.current = false; netErrRef.current = 0; hadFatalErrorRef.current = false;
+                        acquireMic().then(s => s && startEngine(customBlockedWordsRef.current, moderationActionRef.current));
                       }
                     }}
                     className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white/60 border border-white/5 rounded-full font-display font-medium text-xs uppercase tracking-widest flex items-center justify-center"
