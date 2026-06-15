@@ -134,7 +134,8 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
         damping: 20 
       }}
       className={cn(
-        "relative overflow-hidden transition-all duration-300 cursor-pointer select-none touch-manipulation",
+        "relative overflow-hidden transition-all duration-150 cursor-pointer select-none touch-manipulation",
+        "hover:brightness-[1.08] active:scale-[0.97]",
         className
       )}
     >

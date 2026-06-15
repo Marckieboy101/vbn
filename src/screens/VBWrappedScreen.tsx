@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import QRCode from 'qrcode';
 import { useStore } from '../store';
 import { saveSessionData } from '../lib/sessionStorage';
 import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
@@ -578,24 +579,17 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
   // Generate QR when entering summary (export) mode
   useEffect(() => {
     if (mode !== 'summary') return;
-    import('qrcode').then((mod) => {
-      const toDataURL: (text: string, opts: object) => Promise<string> =
-        (mod as any).toDataURL ?? (mod as any).default?.toDataURL;
-      return toDataURL(shareUrl, {
-        width: 200,
-        margin: 2,
-        color: { dark: '#FF5050', light: '#111111' },
-      });
+    QRCode.toDataURL(shareUrl, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#FF5050', light: '#111111' },
     }).then(setQrDataUrl).catch(() => {});
   }, [mode, shareUrl]);
 
   const downloadExportCard = async () => {
     setIsDownloading(true);
     try {
-      const mod = await import('qrcode');
-      const toDataURL: (text: string, opts: object) => Promise<string> =
-        (mod as any).toDataURL ?? (mod as any).default?.toDataURL;
-      const qrUrl = await toDataURL(shareUrl, {
+      const qrUrl = await QRCode.toDataURL(shareUrl, {
         width: 220, margin: 2,
         color: { dark: '#FF5050', light: '#111111' },
       });
@@ -925,13 +919,13 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
             {/* Header */}
             <div className="text-center mb-10">
               <span className="px-3.5 py-1 text-[9px] font-mono font-black uppercase text-brand tracking-widest bg-brand/10 border border-brand/20 rounded-md inline-block mb-3">
-                EXPORTEER & DEEL 📥
+                EXPORTEER & DEEL
               </span>
               <h1 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight text-white leading-none">
-                JOUW <span className="text-brand">WRAPPED CARD</span>
+                JOUW <span className="text-brand">WRAPPED KAART</span>
               </h1>
               <p className="text-xs text-white/40 mt-2 font-mono uppercase tracking-widest">
-                Download en deel jouw persoonlijke resultaten
+                Download en deel jouw resultaten
               </p>
             </div>
 
@@ -1068,7 +1062,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
                           <span className="text-xs font-display font-bold uppercase text-white/80">Scan & Deel</span>
                         </div>
                         <p className="text-[11px] text-white/40 leading-relaxed font-light">
-                          Scan deze QR code om direct toegang te krijgen tot de VanBeresteyn ervaring op je eigen telefoon.
+                          Scan deze QR code om direct toegang te krijgen tot je VBNext informatie op je telefoon
                         </p>
                       </div>
                     </div>

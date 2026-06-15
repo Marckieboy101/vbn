@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '../store';
 import { InteractiveButton } from '../components/InteractiveButton';
 
 export const InstructionsScreen: React.FC = () => {
   const setStep = useStore((state) => state.setStep);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    videoRef.current?.play().catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -64,6 +69,7 @@ export const InstructionsScreen: React.FC = () => {
             {/* Rechterkant - Video */}
             <div className="relative bg-white/5">
               <video
+                ref={videoRef}
                 autoPlay
                 loop
                 muted

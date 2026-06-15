@@ -104,9 +104,9 @@ export const LandingScreen: React.FC = () => {
             ease: "easeInOut" 
           }}
         >
-          KOM <br />
-          <span className="text-brand text-glow-red">DICHTERBIJ</span><br />
-          STAAN
+          DOE JE <br />
+          <span className="text-brand text-glow-red">HAND</span><br />
+          VOORUIT
         </motion.h1>
 
         {/* <p className="text-xl md:text-2xl text-white/60 mb-12 max-w-2xl mx-auto font-light leading-relaxed">

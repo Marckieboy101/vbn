@@ -222,6 +222,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const [isMuted,    setIsMuted]    = useState(false);
   const [micStream,  setMicStream]  = useState<MediaStream | null>(null);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const LANGS = [
     { code: 'nl-NL', flag: '🇳🇱' },
     { code: 'en-US', flag: '🇬🇧' },
@@ -577,6 +579,14 @@ export const VoiceFeedbackScreen: React.FC = () => {
     setProfanityMatches(matches);
   }, [keyboardText, customBlockedWords, moderationAction, inputMode]);
 
+  // Auto-focus textarea when entering keyboard mode
+  useEffect(() => {
+    if (inputMode === 'keyboard' && phase === 'recording') {
+      const t = setTimeout(() => textareaRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [inputMode, phase]);
+
   // ── Navigation ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -867,6 +877,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   profanityMatches.length > 0 && moderationAction === 'warn' ? 'border-amber-500/30' : 'border-white/10',
                 )}>
                   <textarea
+                    ref={textareaRef}
                     autoFocus
                     value={keyboardText}
                     onChange={e => setKeyboardText(e.target.value)}
@@ -1133,15 +1144,15 @@ export const VoiceFeedbackScreen: React.FC = () => {
             className="text-center relative z-10 max-w-xl px-2"
           >
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}
-              className="w-24 h-24 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-10 shadow-[0_0_50px_rgba(16,185,129,0.25)]"
+              className="w-24 h-24 bg-brand/10 border border-brand/30 rounded-full flex items-center justify-center mx-auto mb-10 shadow-[0_0_50px_rgba(255,80,80,0.25)]"
             >
-              <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+              <CheckCircle2 className="w-12 h-12 text-brand" />
             </motion.div>
             <h1 className="text-5xl md:text-7xl font-display font-bold uppercase mb-6 tracking-tight leading-none">
               Bedankt voor <br /><span className="text-brand">jouw input!</span>
             </h1>
             <p className="text-xl text-white/45 font-light max-w-md mx-auto leading-relaxed">
-              Je feedback is succesvol gearchiveerd in ons datanetwerk.
+              Je feedback is succesvol opgeslagen in ons datanetwerk.
             </p>
           </motion.div>
         )}

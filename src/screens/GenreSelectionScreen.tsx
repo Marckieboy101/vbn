@@ -32,7 +32,7 @@ const GENRES = [
   },
   { 
     id: 'romance', 
-    label: 'Romantiek', 
+    label: 'Mindfuck', 
     color: 'from-pink-950/80', 
     image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 
   },
@@ -51,9 +51,9 @@ export const GenreSelectionScreen: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col p-4 sm:p-8 pt-20 max-w-[1200px] mx-auto justify-center">
       <header className="mb-10 md:mb-16 text-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold uppercase mb-3">Selecteer je <span className="text-brand">Sfeer</span></h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold uppercase mb-3">Selecteer je <span className="text-brand">genre</span></h2>
         <p className="text-white/40 max-w-xl mx-auto text-sm sm:text-base">
-          Kies een sfeer die op dit moment bij je past om jouw ervaring te kalibreren.
+          Kies een genre dat jij leuk vind.
         </p>
       </header>
 
