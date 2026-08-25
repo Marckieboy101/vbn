@@ -240,6 +240,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const restartRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stoppedRef     = useRef(false);
   const netErrRef      = useRef(0);
+  const notAllowedRetryRef = useRef(0);
   const committedRawRef = useRef('');
   const committedCensoredRef = useRef('');
   const hadFatalErrorRef = useRef(false);
@@ -326,6 +327,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
     rec.onstart = () => {
       netErrRef.current = 0;
+      notAllowedRetryRef.current = 0;
       setMicStatus('listening');
     };
 
@@ -365,7 +367,25 @@ export const VoiceFeedbackScreen: React.FC = () => {
     rec.onerror = (event: any) => {
       const e = event.error as string;
       if (e === 'not-allowed') {
-        setMicError('Microfoon geweigerd — controleer browser instellingen.');
+        // The mic stream itself is already live (getUserMedia succeeded), so this
+        // is almost always a transient hiccup from the speech service — not a real
+        // permission refusal. Retry a couple of times before surfacing an error.
+        const micActuallyGranted = !!streamRef.current?.getTracks().some(t => t.readyState === 'live');
+        if (micActuallyGranted && notAllowedRetryRef.current < 2 && !stoppedRef.current) {
+          notAllowedRetryRef.current += 1;
+          restartRef.current = setTimeout(() => {
+            restartRef.current = null;
+            if (phaseRef.current === 'recording' && !isMutedRef.current && !stoppedRef.current) {
+              startEngine(blockedWords, modAction);
+            }
+          }, 400);
+          return;
+        }
+        setMicError(
+          micActuallyGranted
+            ? 'Spraakherkenning kon niet starten, ook al is de microfoon toegestaan. Probeer opnieuw of gebruik typen.'
+            : 'Microfoon geweigerd — klik het slotje in de adresbalk en sta toegang toe.',
+        );
         setMicStatus('error'); stoppedRef.current = true; hadFatalErrorRef.current = true;
         setPhase('ask'); phaseRef.current = 'ask'; releaseMic();
       } else if (e === 'audio-capture') {
@@ -426,6 +446,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const startMicRecording = useCallback(async (existingStream?: MediaStream) => {
     stoppedRef.current      = false;
     netErrRef.current       = 0;
+    notAllowedRetryRef.current = 0;
     hadFatalErrorRef.current = false;
     setMicError(null);
     setIsMuted(false); isMutedRef.current = false;
