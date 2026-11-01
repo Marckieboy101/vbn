@@ -1,3 +1,13 @@
+import type { SessionData } from '../lib/sessionStorage';
+import {
+  GUIDE_TAB,
+  SESSIONS_TAB,
+  SUMMARY_TAB,
+  buildLayoutRequests,
+  buildSessionRows,
+  buildSummaryRows,
+} from './googleSheetsLayout';
+
 declare global {
   interface Window {
     google?: any;
@@ -23,19 +33,43 @@ let pendingTokenCallback: ((resp: any) => void) | null = null;
 
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets openid email profile';
 const SESSION_STORAGE_KEY = 'vb_sessions';
-const SHEET_HEADERS_SETUP_KEY_PREFIX = 'vb_sheets_headers_setup_';
+const AUTH_STORAGE_KEY = 'vb_google_auth';
 const AUTOMATIC_SYNC_THROTTLE_MS = 20_000;
+const AUTOMATIC_SYNC_RETRY_MS = 60_000;
+const TOKEN_EXPIRY_MARGIN_MS = 60_000;
+const TOKEN_RENEWAL_TIMEOUT_MS = 15_000;
+let tokenExpiresAt = 0;
 let autoSyncInFlight = false;
 let lastAutoSyncTimestamp = 0;
+let autoSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
-const getSheetHeaderSetupKey = (spreadsheetId: string) => `${SHEET_HEADERS_SETUP_KEY_PREFIX}${spreadsheetId}`;
-const hasSheetHeadersSetup = (spreadsheetId: string): boolean => {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(getSheetHeaderSetupKey(spreadsheetId)) === 'true';
+// sessionStorage: the login survives a page reload, but not closing the tab on a shared device.
+const persistAuth = (): void => {
+  sessionStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify({ token: cachedAccessToken, expiresAt: tokenExpiresAt, user: googleUser })
+  );
 };
-const markSheetHeadersSetup = (spreadsheetId: string): void => {
+
+const restoreAuth = (): void => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(getSheetHeaderSetupKey(spreadsheetId), 'true');
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+    if (!saved?.token) return;
+    cachedAccessToken = saved.token;
+    tokenExpiresAt = saved.expiresAt;
+    googleUser = saved.user;
+  } catch {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+};
+
+restoreAuth();
+
+const applyTokenResponse = (tokenResponse: any): void => {
+  cachedAccessToken = tokenResponse.access_token;
+  tokenExpiresAt = Date.now() + Number(tokenResponse.expires_in) * 1000;
+  persistAuth();
 };
 
 const loadGoogleIdentityServices = (): Promise<void> => {
@@ -90,6 +124,38 @@ const initTokenClient = (): void => {
         pendingTokenCallback(tokenResponse);
       }
     },
+    error_callback: (error: any) => {
+      if (pendingTokenCallback) {
+        pendingTokenCallback({ error: error?.type || 'popup_failed' });
+      }
+    },
+  });
+};
+
+// Google tokens last about an hour. Renews without a consent screen, but the browser can still block this.
+const renewAccessToken = async (): Promise<boolean> => {
+  await loadGoogleIdentityServices();
+  initTokenClient();
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      pendingTokenCallback = null;
+      resolve(false);
+    }, TOKEN_RENEWAL_TIMEOUT_MS);
+
+    pendingTokenCallback = (tokenResponse: any) => {
+      clearTimeout(timeout);
+      pendingTokenCallback = null;
+      if (tokenResponse.error || !tokenResponse.access_token) {
+        console.warn('[Auto-Sync] Google-token vernieuwen mislukt:', tokenResponse.error);
+        resolve(false);
+        return;
+      }
+      applyTokenResponse(tokenResponse);
+      resolve(true);
+    };
+
+    tokenClient.requestAccessToken({ prompt: '', scope: SHEETS_SCOPE, login_hint: googleUser?.email });
   });
 };
 
@@ -126,12 +192,13 @@ export const loginWithGoogleSheets = async (): Promise<{ user: GoogleUser | null
         return;
       }
 
-      cachedAccessToken = tokenResponse.access_token;
+      applyTokenResponse(tokenResponse);
       const token = tokenResponse.access_token;
 
       try {
         const userInfo = await fetchUserInfo(token);
         googleUser = userInfo;
+        persistAuth();
         resolve({ user: userInfo, token });
       } catch (error) {
         console.error('Kon gebruikersinformatie niet ophalen:', error);
@@ -152,10 +219,13 @@ export const loginWithGoogleSheets = async (): Promise<{ user: GoogleUser | null
 
 export const logoutGoogleSheets = (): void => {
   cachedAccessToken = null;
+  tokenExpiresAt = 0;
   googleUser = null;
+  sessionStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
-export const getCachedToken = (): string | null => cachedAccessToken;
+export const getCachedToken = (): string | null =>
+  Date.now() < tokenExpiresAt - TOKEN_EXPIRY_MARGIN_MS ? cachedAccessToken : null;
 
 export const getGoogleUser = (): GoogleUser | null => googleUser;
 
@@ -228,109 +298,86 @@ export const getSheetFirstTabTitle = async (spreadsheetId: string): Promise<stri
   return firstSheetName || 'Sheet1';
 };
 
-export const writeHeaders = async (spreadsheetId: string, sheetName: string): Promise<void> => {
+// Builds the tabs and formatting once. The batch is atomic, so the Uitleg tab only exists on a fully prepared spreadsheet.
+export const prepareSpreadsheet = async (spreadsheetId: string): Promise<void> => {
   const token = cachedAccessToken;
   if (!token) throw new Error('Niet geautoriseerd.');
 
-  const headers = [
-    'Session ID',
-    'Tijdstip',
-    'Vibe / Genres',
-    'Archetype',
-    'Filmduur',
-    'Immersie Spectrum',
-    'Sociaal Engagement',
-    'Reflectie-Pauzes',
-    'Leeftijdsgroep',
-    'Voice Feedback (Gezuiverd)',
-    'Voice Feedback (Origineel)',
-    'Moderatie Filter',
-    'Sessie Status',
-  ];
-
-  const range = `${sheetName}!A1:M1`;
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`,
+  const metaResponse = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties(sheetId,title)`,
     {
-      method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        range,
-        majorDimension: 'ROWS',
-        values: [headers],
-      }),
     }
   );
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Fout bij schrijven van headers: ${errText}`);
+  if (!metaResponse.ok) {
+    const errText = await metaResponse.text();
+    throw new Error(`Fout bij laden spreadsheet structuur: ${errText}`);
   }
-};
 
-export const syncSessionsToSpreadsheet = async (
-  spreadsheetId: string,
-  sheetName: string,
-  sessions: any[]
-): Promise<void> => {
-  const token = cachedAccessToken;
-  if (!token) throw new Error('Niet geautoriseerd.');
+  const meta = await metaResponse.json();
+  const tabs: { sheetId: number; title: string }[] = (meta.sheets ?? []).map((sheet: any) => sheet.properties);
+  if (tabs.some((tab) => tab.title === GUIDE_TAB)) return;
 
-  const clearRange = `${sheetName}!A2:M2000`;
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${clearRange}:clear`, {
+  const dataTab = tabs.find((tab) => tab.title === SESSIONS_TAB) ?? tabs[0];
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ requests: buildLayoutRequests(dataTab.sheetId) }),
   });
 
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Fout bij opmaken spreadsheet: ${errText}`);
+  }
+};
+
+export const syncSessionsToSpreadsheet = async (spreadsheetId: string, sessions: SessionData[]): Promise<void> => {
+  const token = cachedAccessToken;
+  if (!token) throw new Error('Niet geautoriseerd.');
+
+  // A browser without local sessions must not wipe a spreadsheet that already holds data.
   if (sessions.length === 0) return;
 
-  const rows = sessions.map((s) => {
-    const getParamVal = (keyPattern: string) => {
-      if (!s.answers) return 'N/V';
-      const key = Object.keys(s.answers).find((k) => k.toLowerCase().includes(keyPattern));
-      return key ? `${s.answers[key]}%` : 'N/V';
-    };
-
-    const formattedDate = s.timestamp ? new Date(s.timestamp).toLocaleString('nl-NL') : 'Onbekend';
-
-    return [
-      s.sessionId || 'Onbekend',
-      formattedDate,
-      s.genres?.join(', ') || 'Geen',
-      s.archetypeTitle || s.archetype || 'Onbekend',
-      getParamVal('duration') !== 'N/V' ? getParamVal('duration') : getParamVal('duur'),
-      getParamVal('immersion') !== 'N/V' ? getParamVal('immersion') : getParamVal('immers'),
-      getParamVal('social') !== 'N/V' ? getParamVal('social') : getParamVal('socia'),
-      getParamVal('breaks') !== 'N/V' ? getParamVal('breaks') : getParamVal('pauz'),
-      s.ageGroup || '-',
-      s.voice_feedback || '-',
-      s.voice_feedback_original || '-',
-      s.voice_feedback_moderation_toxic ? 'GEBLOKKEERD / NOT TOXISCH' : 'GOEDGEKEURD',
-      s.completed ? 'VOLTOOID' : 'ONDERBROKEN',
-    ];
-  });
-
-  const writeRange = `${sheetName}!A2`;
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${writeRange}?valueInputOption=USER_ENTERED`,
+  const clearResponse = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${SESSIONS_TAB}!A2:N:clear`,
     {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        range: writeRange,
-        majorDimension: 'ROWS',
-        values: rows,
-      }),
     }
   );
+
+  if (!clearResponse.ok) {
+    const errText = await clearResponse.text();
+    throw new Error(`Fout bij leegmaken sessiedata: ${errText}`);
+  }
+
+  // RAW keeps visitor text inert: feedback starting with "=" must never run as a formula.
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      valueInputOption: 'RAW',
+      data: [
+        { range: `${SESSIONS_TAB}!A2`, majorDimension: 'ROWS', values: buildSessionRows(sessions) },
+        {
+          range: `${SUMMARY_TAB}!A1`,
+          majorDimension: 'ROWS',
+          values: buildSummaryRows(sessions, new Date().toLocaleString('nl-NL')),
+        },
+      ],
+    }),
+  });
 
   if (!response.ok) {
     const errText = await response.text();
@@ -338,10 +385,17 @@ export const syncSessionsToSpreadsheet = async (
   }
 };
 
+const scheduleAutomaticSync = (delayMs: number): void => {
+  if (autoSyncTimer) return;
+  autoSyncTimer = setTimeout(() => {
+    autoSyncTimer = null;
+    triggerAutomaticGoogleSheetsSync();
+  }, delayMs);
+};
+
 export const triggerAutomaticGoogleSheetsSync = async (): Promise<boolean> => {
-  const token = cachedAccessToken;
-  if (!token) {
-    console.log('[Auto-Sync] Geen Google Sheets OAuth token gecached. Automatische sync overgeslagen.');
+  if (!cachedAccessToken) {
+    console.log('[Auto-Sync] Niet ingelogd bij Google. Automatische sync overgeslagen.');
     return false;
   }
 
@@ -353,41 +407,38 @@ export const triggerAutomaticGoogleSheetsSync = async (): Promise<boolean> => {
 
   try {
     const now = Date.now();
-    if (autoSyncInFlight) {
-      console.log('[Auto-Sync] Sync already in flight, skipping.');
-      return false;
-    }
-    if (now - lastAutoSyncTimestamp < AUTOMATIC_SYNC_THROTTLE_MS) {
-      console.log('[Auto-Sync] Throttled automatic sync (too frequent).');
+    const throttleRemaining = lastAutoSyncTimestamp + AUTOMATIC_SYNC_THROTTLE_MS - now;
+    if (autoSyncInFlight || throttleRemaining > 0) {
+      // Never drop a save: the delayed sync uploads the newest data, including a session's final step.
+      scheduleAutomaticSync(autoSyncInFlight ? AUTOMATIC_SYNC_THROTTLE_MS : throttleRemaining);
       return false;
     }
 
     autoSyncInFlight = true;
     lastAutoSyncTimestamp = now;
 
-    const spreadsheet: SpreadsheetInfo = JSON.parse(saved);
-    if (!spreadsheet.spreadsheetId) {
-      autoSyncInFlight = false;
+    if (!getCachedToken() && !(await renewAccessToken())) {
+      console.warn('[Auto-Sync] Google-login verlopen. Sessies blijven lokaal bewaard tot opnieuw is ingelogd.');
       return false;
     }
+
+    const spreadsheet: SpreadsheetInfo = JSON.parse(saved);
+    if (!spreadsheet.spreadsheetId) return false;
 
     console.log('[Auto-Sync] Automatische synchronisatie gestart voor:', spreadsheet.title);
 
     const sessionsResponse = localStorage.getItem(SESSION_STORAGE_KEY);
-    const sessions = sessionsResponse ? (JSON.parse(sessionsResponse) as any[]) : [];
+    const sessions = sessionsResponse ? (JSON.parse(sessionsResponse) as SessionData[]) : [];
     sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    const sheetName = await getSheetFirstTabTitle(spreadsheet.spreadsheetId);
-    if (!hasSheetHeadersSetup(spreadsheet.spreadsheetId)) {
-      await writeHeaders(spreadsheet.spreadsheetId, sheetName);
-      markSheetHeadersSetup(spreadsheet.spreadsheetId);
-    }
-    await syncSessionsToSpreadsheet(spreadsheet.spreadsheetId, sheetName, sessions);
+    await prepareSpreadsheet(spreadsheet.spreadsheetId);
+    await syncSessionsToSpreadsheet(spreadsheet.spreadsheetId, sessions);
 
     console.log('[Auto-Sync] Automatische synchronisatie succesvol afgerond.');
     return true;
   } catch (err) {
     console.warn('[Auto-Sync] Fout tijdens automatische Google Sheets synchronisatie:', err);
+    scheduleAutomaticSync(AUTOMATIC_SYNC_RETRY_MS);
     return false;
   } finally {
     autoSyncInFlight = false;

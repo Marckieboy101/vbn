@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import QRCode from 'qrcode';
 import { useStore } from '../store';
 import { saveSessionData } from '../lib/sessionStorage';
-import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 import {
   X,
   ArrowRight,
@@ -47,7 +46,7 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
   } = useStore();
 
   useEffect(() => {
-    const saveSessionDataLocally = async () => {
+    const saveSessionDataLocally = () => {
       try {
         saveSessionData({
           sessionId,
@@ -60,7 +59,6 @@ export const VBWrappedScreen: React.FC<VBWrappedScreenProps> = ({ onClose }) => 
           completed: true,
           thanked: true
         });
-        await triggerAutomaticGoogleSheetsSync();
       } catch (error) {
         console.warn('Lokale sessieopslag mislukt:', error);
       }

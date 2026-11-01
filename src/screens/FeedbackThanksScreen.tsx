@@ -4,14 +4,13 @@ import { useStore } from '../store';
 import { CheckCircle2, ArrowRight, BrainCircuit } from 'lucide-react';
 import { InteractiveButton } from '../components/InteractiveButton';
 import { saveSessionData } from '../lib/sessionStorage';
-import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
 export const FeedbackThanksScreen: React.FC = () => {
   const { setStep, sessionId, selectedGenres, answers, ageGroup } = useStore();
 
   useEffect(() => {
     // Save the interaction data locally as completed
-    const saveProgress = async () => {
+    const saveProgress = () => {
       try {
         saveSessionData({
           sessionId,
@@ -22,9 +21,6 @@ export const FeedbackThanksScreen: React.FC = () => {
           completed: true,
           feedback_received: true
         });
-
-        // Trigger automatic Google Sheets sync in background
-        await triggerAutomaticGoogleSheetsSync();
       } catch (error) {
         console.warn('Lokale sessieopslag mislukt:', error);
       }

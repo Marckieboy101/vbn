@@ -18,8 +18,9 @@ import {
   getCachedToken, 
   getGoogleUser,
   getSheetFirstTabTitle,
-  writeHeaders,
+  prepareSpreadsheet,
   syncSessionsToSpreadsheet,
+  triggerAutomaticGoogleSheetsSync,
   SpreadsheetInfo,
   createSpreadsheet
 } from "../services/googleSheetsService";
@@ -73,6 +74,13 @@ export const GoogleSheetsIntegration: React.FC = () => {
     refreshAuthState();
   }, [isOpen]);
 
+  // Upload anything saved before a reload, and keep the login warning on the button up to date
+  useEffect(() => {
+    triggerAutomaticGoogleSheetsSync();
+    const interval = setInterval(refreshAuthState, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setStatusMsg({ text: "Inloggen bij Google...", type: "info" });
@@ -87,8 +95,7 @@ export const GoogleSheetsIntegration: React.FC = () => {
         if (!savedSpreadsheet && !currentSpreadsheet) {
           setStatusMsg({ text: "Nieuwe spreadsheet wordt automatisch aangemaakt...", type: "info" });
           const info = await createSpreadsheet("Filmvibe Feedback Sessiedata");
-          const sheetName = await getSheetFirstTabTitle(info.spreadsheetId);
-          await writeHeaders(info.spreadsheetId, sheetName);
+          await prepareSpreadsheet(info.spreadsheetId);
 
           setCurrentSpreadsheet(info);
           setSheetInput(info.spreadsheetUrl);
@@ -98,6 +105,7 @@ export const GoogleSheetsIntegration: React.FC = () => {
             type: "success",
           });
         }
+        await triggerAutomaticGoogleSheetsSync();
       }
     } catch (err: any) {
       console.error(err);
@@ -189,9 +197,8 @@ export const GoogleSheetsIntegration: React.FC = () => {
     try {
       const info = await createSpreadsheet("Filmvibe Feedback Sessiedata");
       setCurrentStepIndex(1);
-      
-      const sheetName = await getSheetFirstTabTitle(info.spreadsheetId);
-      await writeHeaders(info.spreadsheetId, sheetName);
+
+      await prepareSpreadsheet(info.spreadsheetId);
 
       setCurrentSpreadsheet(info);
       setSheetInput(info.spreadsheetUrl);
@@ -231,8 +238,8 @@ export const GoogleSheetsIntegration: React.FC = () => {
     
     const steps = [
       "1/4 Sessies laden uit lokale opslag...",
-      "2/4 Doelgroep tabblad opvragen...",
-      "3/4 Kolomkoppen (headers) schrijven...",
+      "2/4 Tabbladen en opmaak controleren...",
+      "3/4 Overzicht berekenen...",
       "4/4 Gegevens uploaden naar spreadsheet..."
     ];
     setSyncSteps(steps);
@@ -245,13 +252,10 @@ export const GoogleSheetsIntegration: React.FC = () => {
       sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
       setCurrentStepIndex(1);
-      const sheetName = await getSheetFirstTabTitle(currentSpreadsheet.spreadsheetId);
-      
-      setCurrentStepIndex(2);
-      await writeHeaders(currentSpreadsheet.spreadsheetId, sheetName);
-      
+      await prepareSpreadsheet(currentSpreadsheet.spreadsheetId);
+
       setCurrentStepIndex(3);
-      await syncSessionsToSpreadsheet(currentSpreadsheet.spreadsheetId, sheetName, sessions);
+      await syncSessionsToSpreadsheet(currentSpreadsheet.spreadsheetId, sessions);
       
       setStatusMsg({ 
         text: `Synchronisatie geslaagd! ${sessions.length} sessies geüpload naar de spreadsheet.`, 
@@ -278,9 +282,12 @@ export const GoogleSheetsIntegration: React.FC = () => {
         id="sheets-sync-trigger"
         onClick={() => setIsOpen(true)}
         className="fixed top-8 right-24 z-[100] p-3 glass rounded-full border-white/5 hover:bg-white/10 transition-colors group flex items-center justify-center"
-        title="Google Sheets Synchronisatie"
+        title={currentSpreadsheet && !authorized ? "Opnieuw inloggen nodig: nieuwe sessies worden nog niet naar Google Sheets opgeslagen" : "Google Sheets Synchronisatie"}
       >
         <FileSpreadsheet className="w-5 h-5 text-white/40 group-hover:text-emerald-400 transition-colors" />
+        {currentSpreadsheet && !authorized && (
+          <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
+        )}
       </button>
 
       {/* Modal Overlay */}

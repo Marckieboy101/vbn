@@ -11,7 +11,6 @@ import { soundManager } from '../lib/sound';
 import { cn } from '../lib/utils';
 import { saveSessionData } from '../lib/sessionStorage';
 import { moderateAndRefineSpeech, ModerationResult } from '../services/geminiService';
-import { triggerAutomaticGoogleSheetsSync } from '../services/googleSheetsService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -575,7 +574,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
         voice_feedback_moderation_toxic: aiResult?.toxic || profanityMatches.length > 0,
         voice_feedback_timestamp: Date.now(), timestamp: Date.now(),
       });
-      await triggerAutomaticGoogleSheetsSync();
     } catch { }
   }, [aiResult, getSubmitText, inputMode, keyboardText, committedText, sessionId, activeLang, profanityMatches]);
 
