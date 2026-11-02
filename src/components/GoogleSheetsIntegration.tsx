@@ -21,20 +21,25 @@ import {
   prepareSpreadsheet,
   syncSessionsToSpreadsheet,
   triggerAutomaticGoogleSheetsSync,
+  SheetPermissionError,
   SpreadsheetInfo,
   createSpreadsheet
 } from "../services/googleSheetsService";
 import { getSavedSessions } from "../lib/sessionStorage";
 import { cn } from "../lib/utils";
 
+const DEFAULT_SPREADSHEET: SpreadsheetInfo = {
+  spreadsheetId: "19N1TYbXuFeQq3ttC5JiGKxPvmbth8O-GQKuA3DQGzck",
+  spreadsheetUrl: "https://docs.google.com/spreadsheets/d/19N1TYbXuFeQq3ttC5JiGKxPvmbth8O-GQKuA3DQGzck/edit",
+  title: "Filmvibe Feedback Sessiedata",
+};
+
 export const GoogleSheetsIntegration: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   
-  const [sheetInput, setSheetInput] = useState<string>(
-    "https://docs.google.com/spreadsheets/d/1Av8iGTwbTCvoDY3-JrFFAf73Rc5w2EDt614D6PUicKM/edit?gid=0#gid=0"
-  );
+  const [sheetInput, setSheetInput] = useState<string>(DEFAULT_SPREADSHEET.spreadsheetUrl);
   const [currentSpreadsheet, setCurrentSpreadsheet] = useState<SpreadsheetInfo | null>(null);
   
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
@@ -93,15 +98,11 @@ export const GoogleSheetsIntegration: React.FC = () => {
 
         const savedSpreadsheet = localStorage.getItem("vb_spreadsheet");
         if (!savedSpreadsheet && !currentSpreadsheet) {
-          setStatusMsg({ text: "Nieuwe spreadsheet wordt automatisch aangemaakt...", type: "info" });
-          const info = await createSpreadsheet("Filmvibe Feedback Sessiedata");
-          await prepareSpreadsheet(info.spreadsheetId);
-
-          setCurrentSpreadsheet(info);
-          setSheetInput(info.spreadsheetUrl);
-          localStorage.setItem("vb_spreadsheet", JSON.stringify(info));
+          setCurrentSpreadsheet(DEFAULT_SPREADSHEET);
+          setSheetInput(DEFAULT_SPREADSHEET.spreadsheetUrl);
+          localStorage.setItem("vb_spreadsheet", JSON.stringify(DEFAULT_SPREADSHEET));
           setStatusMsg({
-            text: `Nieuwe spreadsheet automatisch aangemaakt en gekoppeld: ${info.title}`,
+            text: `Spreadsheet automatisch gekoppeld: ${DEFAULT_SPREADSHEET.title}`,
             type: "success",
           });
         }
@@ -251,14 +252,34 @@ export const GoogleSheetsIntegration: React.FC = () => {
       // Sort sessions by timestamp descending (newest on top)
       sessions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-      setCurrentStepIndex(1);
-      await prepareSpreadsheet(currentSpreadsheet.spreadsheetId);
+      const uploadTo = async (spreadsheetId: string) => {
+        setCurrentStepIndex(1);
+        await prepareSpreadsheet(spreadsheetId);
 
-      setCurrentStepIndex(3);
-      await syncSessionsToSpreadsheet(currentSpreadsheet.spreadsheetId, sessions);
+        setCurrentStepIndex(3);
+        await syncSessionsToSpreadsheet(spreadsheetId, sessions);
+      };
+
+      let movedToNewSheet = false;
+      try {
+        await uploadTo(currentSpreadsheet.spreadsheetId);
+      } catch (err) {
+        if (!(err instanceof SheetPermissionError)) throw err;
+
+        // The linked spreadsheet refuses this account's edits, so continue in one it owns.
+        const info = await createSpreadsheet("Filmvibe Feedback Sessiedata");
+        await uploadTo(info.spreadsheetId);
+
+        setCurrentSpreadsheet(info);
+        setSheetInput(info.spreadsheetUrl);
+        localStorage.setItem("vb_spreadsheet", JSON.stringify(info));
+        movedToNewSheet = true;
+      }
       
       setStatusMsg({ 
-        text: `Synchronisatie geslaagd! ${sessions.length} sessies geüpload naar de spreadsheet.`, 
+        text: movedToNewSheet
+          ? `De gekoppelde spreadsheet weigerde wijzigingen. Er is een nieuwe spreadsheet in uw Google Drive aangemaakt en gekoppeld, met ${sessions.length} sessies. Klik op Open spreadsheet om hem te bekijken.`
+          : `Synchronisatie geslaagd!${sessions.length} sessies geüpload naar de spreadsheet.`, 
         type: "success" 
       });
       setSyncsCount(prev => prev + 1);

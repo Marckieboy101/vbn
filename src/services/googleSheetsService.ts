@@ -226,6 +226,8 @@ export const getCachedToken = (): string | null =>
 
 export const getGoogleUser = (): GoogleUser | null => googleUser;
 
+const accountLabel = (): string => (googleUser?.email ? ` ${googleUser.email}` : ' dit account');
+
 export const createSpreadsheet = async (title: string): Promise<SpreadsheetInfo> => {
   const token = cachedAccessToken;
   if (!token) {
@@ -247,16 +249,23 @@ export const createSpreadsheet = async (title: string): Promise<SpreadsheetInfo>
 
   if (!response.ok) {
     const errText = await response.text();
+    let reason: string | undefined;
     try {
-      const errJson = JSON.parse(errText);
-      const reason = errJson?.error?.details?.[0]?.reason;
-      if (reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT') {
-        throw new Error(
-          'Fout bij aanmaken spreadsheet: onvoldoende machtigingen op het access token. Herautorisatie is nodig. Probeer in een incognito-venster in te loggen of verwijder de bestaande app-toestemming in uw Google-account en probeer opnieuw.'
-        );
-      }
+      reason = JSON.parse(errText)?.error?.details?.[0]?.reason;
     } catch (e) {
       // fallthrough to generic error
+    }
+
+    if (reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT') {
+      throw new Error(
+        'Fout bij aanmaken spreadsheet: onvoldoende machtigingen op het access token. Herautorisatie is nodig. Probeer in een incognito-venster in te loggen of verwijder de bestaande app-toestemming in uw Google-account en probeer opnieuw.'
+      );
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        `Google weigert dat${accountLabel()} een nieuwe spreadsheet aanmaakt. Controleer of de Google-opslag vol is (https://drive.google.com/settings/storage) en of u met dit account zelf een spreadsheet kunt maken via https://sheets.new.`
+      );
     }
 
     throw new Error(`Fout bij aanmaken spreadsheet: ${errText}`);
@@ -295,6 +304,15 @@ export const getSheetFirstTabTitle = async (spreadsheetId: string): Promise<stri
   return firstSheetName || 'Sheet1';
 };
 
+// A 403 on a write doesn't say why: missing edit rights and an account that may not write at all look identical.
+export class SheetPermissionError extends Error {
+  constructor() {
+    super(
+      `Google weigert wijzigingen van${accountLabel()} in deze spreadsheet. Controleer of dit account Bewerker is via Delen in de spreadsheet, en of de Google-opslag niet vol is (https://drive.google.com/settings/storage).`
+    );
+  }
+}
+
 // Builds the tabs and formatting once. The batch is atomic, so the Uitleg tab only exists on a fully prepared spreadsheet.
 export const prepareSpreadsheet = async (spreadsheetId: string): Promise<void> => {
   const token = cachedAccessToken;
@@ -329,6 +347,7 @@ export const prepareSpreadsheet = async (spreadsheetId: string): Promise<void> =
   });
 
   if (!response.ok) {
+    if (response.status === 403) throw new SheetPermissionError();
     const errText = await response.text();
     throw new Error(`Fout bij opmaken spreadsheet: ${errText}`);
   }
@@ -352,6 +371,7 @@ export const syncSessionsToSpreadsheet = async (spreadsheetId: string, sessions:
   );
 
   if (!clearResponse.ok) {
+    if (clearResponse.status === 403) throw new SheetPermissionError();
     const errText = await clearResponse.text();
     throw new Error(`Fout bij leegmaken sessiedata: ${errText}`);
   }
@@ -377,6 +397,7 @@ export const syncSessionsToSpreadsheet = async (spreadsheetId: string, sessions:
   });
 
   if (!response.ok) {
+    if (response.status === 403) throw new SheetPermissionError();
     const errText = await response.text();
     throw new Error(`Fout bij schrijven sessiedata: ${errText}`);
   }
@@ -435,7 +456,8 @@ export const triggerAutomaticGoogleSheetsSync = async (): Promise<boolean> => {
     return true;
   } catch (err) {
     console.warn('[Auto-Sync] Fout tijdens automatische Google Sheets synchronisatie:', err);
-    scheduleAutomaticSync(AUTOMATIC_SYNC_RETRY_MS);
+    // Retrying can't help until someone changes the sharing settings.
+    if (!(err instanceof SheetPermissionError)) scheduleAutomaticSync(AUTOMATIC_SYNC_RETRY_MS);
     return false;
   } finally {
     autoSyncInFlight = false;
