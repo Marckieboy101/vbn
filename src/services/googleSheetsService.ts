@@ -100,13 +100,10 @@ const loadGoogleIdentityServices = (): Promise<void> => {
   });
 };
 
-const getGoogleClientId = (): string => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    throw new Error('Geen Google OAuth Client ID ingesteld. Voeg VITE_GOOGLE_CLIENT_ID toe aan uw .env.local.');
-  }
-  return clientId;
-};
+// Not a secret: a client ID ships in every browser bundle. Fallback for builds without .env.local, which isn't in git.
+const DEFAULT_GOOGLE_CLIENT_ID = '184949254614-po926dor450d1385d473ccmni2tpv9kl.apps.googleusercontent.com';
+
+const getGoogleClientId = (): string => import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 
 const initTokenClient = (): void => {
   if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
