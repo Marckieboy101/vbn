@@ -183,6 +183,8 @@ type Phase     = 'ask' | 'recording' | 'ai_review' | 'thanks';
 type MicStatus = 'idle' | 'requesting' | 'listening' | 'paused' | 'error';
 type InputMode = 'mic' | 'keyboard';
 
+const MIC_RECORDING_SECONDS = 15;
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export const VoiceFeedbackScreen: React.FC = () => {
@@ -217,7 +219,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const [showFilters,  setShowFilters] = useState(false);
 
   // Timer (only used in mic mode)
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(MIC_RECORDING_SECONDS);
 
   // AI review
   const [aiPolishing, setAiPolishing] = useState(false);
@@ -248,6 +250,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const notAllowedRetryRef = useRef(0);
   const committedRawRef = useRef('');
   const committedCensoredRef = useRef('');
+  const interimRawRef = useRef('');
   const hadFatalErrorRef = useRef(false);
   const rawLenAtSpeechStartRef = useRef(0);
   const unresolvedSpeechSegmentsRef = useRef(0);
@@ -381,6 +384,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
         setRecognitionStruggling(false);
       }
 
+      interimRawRef.current = currentInterim;
       const { out: censoredInterim } = censorText(currentInterim, blockedWords, modAction);
       setInterimText(censoredInterim);
     };
@@ -430,7 +434,6 @@ export const VoiceFeedbackScreen: React.FC = () => {
     };
 
     rec.onend = () => {
-      setInterimText('');
       setSpeechDetected(false);
 
       if (phaseRef.current === 'recording' && !isMutedRef.current && !stoppedRef.current) {
@@ -491,7 +494,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
     setRawCommitted('');
     setInterimText('');
     setProfanityMatches([]);
-    setTimeLeft(60);
+    setTimeLeft(MIC_RECORDING_SECONDS);
+    interimRawRef.current = '';
     setSpeechDetected(false);
     setRecognitionStruggling(false);
     unresolvedSpeechSegmentsRef.current = 0;
@@ -504,6 +508,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
     releaseMic();
     setMicStatus('idle');
     setInterimText('');
+    interimRawRef.current = '';
     setSpeechDetected(false);
     setRecognitionStruggling(false);
     // Carry over any spoken text into the textarea
@@ -544,6 +549,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
       stopEngine(true);
       setMicStatus('paused');
       setInterimText('');
+      interimRawRef.current = '';
       setSpeechDetected(false);
     }
   }, [isMuted, stopEngine, startEngine]);
@@ -553,7 +559,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
   // Returns the best raw text to send to AI, depending on which input was used
   const getSubmitText = useCallback(() => {
     if (inputMode === 'keyboard') return keyboardText.trim();
-    return committedRawRef.current || rawCommitted;
+    return [committedRawRef.current || rawCommitted, interimRawRef.current].filter(Boolean).join(' ').trim();
   }, [inputMode, keyboardText, rawCommitted]);
 
   const doSubmit = useCallback(async () => {
@@ -710,7 +716,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   setKeyboardText('');
                   setPhase('recording'); phaseRef.current = 'recording';
                   setInputMode('keyboard');
-                  setTimeLeft(60);
+                  setTimeLeft(MIC_RECORDING_SECONDS);
                   soundManager.play('SUCCESS', 0.4);
                 }}
                 className="px-8 py-5 glass border border-white/10 rounded-full group overflow-hidden relative min-w-[200px]"
@@ -882,7 +888,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
                   <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
                     <div
                       className={cn('h-full', profanityMatches.length > 0 ? 'bg-amber-500' : 'bg-brand')}
-                      style={{ width: `${(timeLeft / 60) * 100}%`, transition: 'width 1s linear' }}
+                      style={{ width: `${(timeLeft / MIC_RECORDING_SECONDS) * 100}%`, transition: 'width 1s linear' }}
                     />
                   </div>
 
@@ -1179,7 +1185,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
                     onClick={() => {
                       committedRawRef.current = ''; committedCensoredRef.current = '';
                       setCommittedText(''); setRawCommitted(''); setInterimText('');
-                      setKeyboardText(''); setTimeLeft(60);
+                      setKeyboardText(''); setTimeLeft(MIC_RECORDING_SECONDS);
+                      interimRawRef.current = '';
                       setPhase('recording'); phaseRef.current = 'recording';
                       if (inputMode === 'mic') {
                         stoppedRef.current = false; netErrRef.current = 0; hadFatalErrorRef.current = false;

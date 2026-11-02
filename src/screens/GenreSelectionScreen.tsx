@@ -31,7 +31,7 @@ const GENRES = [
     image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800' 
   },
   { 
-    id: 'romance', 
+    id: 'mindfuck', 
     label: 'Mindfuck', 
     color: 'from-pink-950/80', 
     image: 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800' 

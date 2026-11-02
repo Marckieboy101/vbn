@@ -25,7 +25,7 @@ export const InteractiveButton: React.FC<InteractiveElementProps> = ({
   const [isMouseHovered, setIsMouseHovered] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
   
-  const HOVER_DURATION = 3000; // Strictly 3 seconds
+  const HOVER_DURATION = 2000; // Strictly 2 seconds
 
   useEffect(() => {
     const isActuallyHovered = (isVisible && isHovered) || isMouseHovered;
