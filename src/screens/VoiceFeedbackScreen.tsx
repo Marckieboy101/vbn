@@ -200,6 +200,12 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const [interimText,   setInterimText]   = useState('');   // live hypothesis
   const [rawCommitted,  setRawCommitted]  = useState('');   // unfiltered finals
 
+  // Live "I can hear you" feedback — separate from the transcript itself, so the
+  // user sees an immediate reaction the moment they speak, even before (or if never)
+  // the speech engine manages to resolve that audio into actual text.
+  const [speechDetected, setSpeechDetected] = useState(false);
+  const [recognitionStruggling, setRecognitionStruggling] = useState(false);
+
   // Keyboard transcript
   const [keyboardText, setKeyboardText] = useState('');
 
@@ -243,6 +249,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const committedRawRef = useRef('');
   const committedCensoredRef = useRef('');
   const hadFatalErrorRef = useRef(false);
+  const rawLenAtSpeechStartRef = useRef(0);
+  const unresolvedSpeechSegmentsRef = useRef(0);
 
   useEffect(() => { phaseRef.current    = phase;     }, [phase]);
   useEffect(() => { isMutedRef.current  = isMuted;   }, [isMuted]);
@@ -330,33 +338,47 @@ export const VoiceFeedbackScreen: React.FC = () => {
       setMicStatus('listening');
     };
 
-    // Track the highest result index committed this session so we never
-    // re-process already-finalized results if Chrome fires events unexpectedly.
-    let lastCommittedIndex = -1;
+    // These fire the instant the engine detects actual voice in the audio stream —
+    // well before (and sometimes instead of) a usable transcript comes back. Surfacing
+    // them gives the user immediate proof their voice is being picked up, so the UI
+    // never looks dead while they're talking.
+    rec.onspeechstart = () => {
+      setSpeechDetected(true);
+      rawLenAtSpeechStartRef.current = committedRawRef.current.length;
+    };
+    rec.onspeechend = () => {
+      setSpeechDetected(false);
+      if (committedRawRef.current.length === rawLenAtSpeechStartRef.current) {
+        unresolvedSpeechSegmentsRef.current += 1;
+        if (unresolvedSpeechSegmentsRef.current >= 2) setRecognitionStruggling(true);
+      }
+    };
+
+    const textBeforeRecognition = committedRawRef.current;
 
     rec.onresult = (event: any) => {
-      let newFinals = '';
+      let sessionFinals = '';
       let currentInterim = '';
 
-      const startIdx = Math.max(event.resultIndex, lastCommittedIndex + 1);
-      for (let i = startIdx; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          newFinals += (newFinals ? ' ' : '') + t.trim();
-          lastCommittedIndex = i;
+          sessionFinals += (sessionFinals ? ' ' : '') + t.trim();
         } else {
-          currentInterim = t.trim();
+          currentInterim += (currentInterim ? ' ' : '') + t.trim();
         }
       }
 
-      if (newFinals) {
-        const fullRaw = [committedRawRef.current, newFinals].filter(Boolean).join(' ');
+      if (sessionFinals) {
+        const fullRaw = [textBeforeRecognition, sessionFinals].filter(Boolean).join(' ');
         const { out: censored, matches } = censorText(fullRaw, blockedWords, modAction);
         committedRawRef.current      = fullRaw;
         committedCensoredRef.current = censored;
         setRawCommitted(fullRaw);
         setCommittedText(censored);
         setProfanityMatches(matches);
+        unresolvedSpeechSegmentsRef.current = 0;
+        setRecognitionStruggling(false);
       }
 
       const { out: censoredInterim } = censorText(currentInterim, blockedWords, modAction);
@@ -409,6 +431,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
 
     rec.onend = () => {
       setInterimText('');
+      setSpeechDetected(false);
 
       if (phaseRef.current === 'recording' && !isMutedRef.current && !stoppedRef.current) {
         // Restart seamlessly after Chrome's no-speech timeout.
@@ -469,6 +492,9 @@ export const VoiceFeedbackScreen: React.FC = () => {
     setInterimText('');
     setProfanityMatches([]);
     setTimeLeft(60);
+    setSpeechDetected(false);
+    setRecognitionStruggling(false);
+    unresolvedSpeechSegmentsRef.current = 0;
     startMicRecording();
   }, [stopEngine, releaseMic, startMicRecording]);
 
@@ -478,6 +504,8 @@ export const VoiceFeedbackScreen: React.FC = () => {
     releaseMic();
     setMicStatus('idle');
     setInterimText('');
+    setSpeechDetected(false);
+    setRecognitionStruggling(false);
     // Carry over any spoken text into the textarea
     setKeyboardText(prev => prev || committedCensoredRef.current);
     setInputMode('keyboard');
@@ -516,6 +544,7 @@ export const VoiceFeedbackScreen: React.FC = () => {
       stopEngine(true);
       setMicStatus('paused');
       setInterimText('');
+      setSpeechDetected(false);
     }
   }, [isMuted, stopEngine, startEngine]);
 
@@ -630,12 +659,14 @@ export const VoiceFeedbackScreen: React.FC = () => {
   const statusDot = useMemo(() => {
     if (isMuted) return { cls: 'bg-amber-500 animate-pulse', label: 'Microfoon Gedempt' };
     switch (micStatus) {
-      case 'listening':  return { cls: 'bg-red-500 animate-ping',   label: 'Aan het Luisteren' };
+      case 'listening':  return speechDetected
+        ? { cls: 'bg-emerald-500 animate-ping', label: 'Spraak Gedetecteerd' }
+        : { cls: 'bg-red-500 animate-ping',   label: 'Aan het Luisteren' };
       case 'requesting': return { cls: 'bg-blue-400 animate-pulse', label: 'Microfoon Aanvragen...' };
       case 'error':      return { cls: 'bg-red-500',                label: 'Fout' };
       default:           return { cls: 'bg-white/30 animate-pulse', label: 'Starten...' };
     }
-  }, [micStatus, isMuted]);
+  }, [micStatus, isMuted, speechDetected]);
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -870,11 +901,26 @@ export const VoiceFeedbackScreen: React.FC = () => {
                         )}
                       </p>
                     ) : (
-                      <span className="opacity-20 italic font-mono text-base uppercase tracking-widest">
-                        {micStatus === 'listening' ? 'Spreek je gedachten in...' : micStatus === 'requesting' ? 'Microfoon aanvragen...' : 'Starten...'}
+                      <span className={cn(
+                        'italic font-mono text-base uppercase tracking-widest transition-colors duration-300',
+                        micStatus === 'listening' && speechDetected ? 'text-emerald-400 opacity-80 animate-pulse' : 'opacity-20',
+                      )}>
+                        {micStatus === 'listening'
+                          ? (speechDetected ? 'Spraak gedetecteerd — aan het verwerken...' : 'Spreek je gedachten in...')
+                          : micStatus === 'requesting' ? 'Microfoon aanvragen...' : 'Starten...'}
                       </span>
                     )}
                   </div>
+
+                  {!hasContent && recognitionStruggling && (
+                    <div className="border-t border-amber-500/10 mt-2 pt-4 flex items-start gap-3 justify-center text-center px-4">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 min-w-[16px] mt-0.5" />
+                      <p className="text-xs text-amber-400/80 font-mono leading-relaxed max-w-sm">
+                        We horen je spreken, maar kunnen het nog niet goed verstaan. Spreek wat dichter bij de microfoon, of{' '}
+                        <button onClick={switchToKeyboard} className="underline underline-offset-2 hover:text-amber-300">schakel over naar typen</button>.
+                      </p>
+                    </div>
+                  )}
 
                   {profanityMatches.length > 0 && (
                     <div className="border-t border-white/5 mt-4 pt-4 flex flex-wrap gap-2 items-center justify-center">

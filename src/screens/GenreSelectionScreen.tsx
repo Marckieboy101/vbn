@@ -49,15 +49,15 @@ export const GenreSelectionScreen: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col p-4 sm:p-8 pt-20 max-w-[1200px] mx-auto justify-center">
-      <header className="mb-10 md:mb-16 text-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold uppercase mb-3">Selecteer je <span className="text-brand">genre</span></h2>
-        <p className="text-white/40 max-w-xl mx-auto text-sm sm:text-base">
+    <div className="h-dvh flex flex-col p-4 sm:p-6 md:p-8 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-16 md:pt-20 max-w-[1200px] mx-auto w-full min-w-0 overflow-hidden">
+      <header className="shrink-0 min-w-0 mb-3 sm:mb-6 md:mb-10 text-center">
+        <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold uppercase mb-1 sm:mb-3">Selecteer je <span className="text-brand">genre</span></h2>
+        <p className="text-white/40 max-w-xl mx-auto text-xs sm:text-sm md:text-base">
           Kies een genre dat jij leuk vind.
         </p>
       </header>
 
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto w-full mb-12 md:mb-16">
+      <div className="grid grid-cols-3 grid-rows-2 gap-2 sm:gap-4 md:gap-6 max-w-4xl mx-auto w-full min-w-0 flex-1 min-h-0">
         {GENRES.map((genre) => {
           const isSelected = selectedGenres.includes(genre.id);
           return (
@@ -73,7 +73,7 @@ export const GenreSelectionScreen: React.FC = () => {
                 }, 400);
               }}
               className={cn(
-                "relative h-28 sm:h-44 md:h-52 lg:h-60 rounded-2xl md:rounded-3xl border overflow-hidden bg-black group transition-all duration-300",
+                "relative w-full h-full rounded-xl sm:rounded-2xl md:rounded-3xl border overflow-hidden bg-black group transition-all duration-300",
                 isSelected ? "border-brand shadow-[0_0_30px_rgba(255,80,80,0.15)] scale-[1.02]" : "border-white/10 glass hover:border-white/30 hover:scale-[1.01]",
                 isTransitioning && !isSelected && "opacity-30 scale-95"
               )}
@@ -94,8 +94,8 @@ export const GenreSelectionScreen: React.FC = () => {
                 />
               )}
               <div className="absolute inset-0 z-0">
-                <img 
-                  src={genre.image} 
+                <img
+                  src={genre.image}
                   alt={genre.label}
                   className={cn(
                     "w-full h-full object-cover transition-all duration-700",
@@ -104,28 +104,28 @@ export const GenreSelectionScreen: React.FC = () => {
                   referrerPolicy="no-referrer"
                 />
                 <div className={cn(
-                  "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-700", 
-                  genre.color, 
+                  "absolute inset-0 bg-gradient-to-t to-transparent transition-opacity duration-700",
+                  genre.color,
                   isSelected ? "opacity-100" : "opacity-45"
                 )} />
               </div>
-              
-              <div className="absolute inset-0 p-3 sm:p-5 md:p-6 flex flex-col justify-between items-start z-10">
+
+              <div className="absolute inset-0 p-2 sm:p-4 md:p-6 flex flex-col justify-between items-start z-10">
                 <div className={cn(
-                  "w-6 h-6 sm:w-8 md:w-10 md:h-10 rounded-full border flex items-center justify-center transition-all duration-500",
+                  "w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 rounded-full border flex items-center justify-center transition-all duration-500",
                   isSelected ? "bg-brand border-brand scale-110" : "border-white/20 bg-black/40 backrop-blur-sm"
                 )}>
                   <AnimatePresence>
                     {isSelected && (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
+                        <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-5 md:h-5 text-white" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-                
+
                 <div className="text-left w-full">
-                  <h3 className="text-xs sm:text-lg md:text-xl lg:text-2xl font-display font-bold uppercase tracking-tight line-clamp-1">{genre.label}</h3>
+                  <h3 className="text-[0.65rem] sm:text-base md:text-xl lg:text-2xl font-display font-bold uppercase tracking-tight line-clamp-1">{genre.label}</h3>
                 </div>
               </div>
             </InteractiveButton>
