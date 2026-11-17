@@ -14,7 +14,7 @@ interface ExperienceState {
   activeArchetype: Archetype;
   voiceFeedbackText?: string;
   voiceFeedbackOriginal?: string;
-  ageGroup?: '12-13' | '14-15' | '16-18' | '';
+  ageGroup?: '15-17' | '18-22' | '23-27' | '';
 
   setStep: (step: ExperienceState['step']) => void;
   toggleGenre: (genre: string) => void;
@@ -24,7 +24,7 @@ interface ExperienceState {
   setAdmin: (val: boolean) => void;
   toggleSound: () => void;
   setVoiceFeedback: (text: string, original?: string) => void;
-  setAgeGroup: (ageGroup: '12-13' | '14-15' | '16-18') => void;
+  setAgeGroup: (ageGroup: '15-17' | '18-22' | '23-27') => void;
 }
 
 export const useStore = create<ExperienceState>((set) => ({

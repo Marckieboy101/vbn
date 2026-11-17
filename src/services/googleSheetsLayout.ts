@@ -15,7 +15,7 @@ const REVIEW_NONE = 'Geen feedback';
 const REVIEW_OK = 'In orde';
 const REVIEW_CENSORED = 'Gecensureerd';
 
-const AGE_GROUPS = ['12-13', '14-15', '16-18'];
+const AGE_GROUPS = ['15-17', '18-22', '23-27'];
 
 // Labels as visitors see them in GenreSelectionScreen; the ids don't always match ('romance' is shown as 'Mindfuck').
 const GENRE_LABELS: Record<string, string> = {
@@ -312,7 +312,7 @@ const guideTabRequests = (): object[] => {
     row(['']),
     row(['Waar gaat dit over?'], heading),
     row(['Wat', 'Betekenis', ''], tableHeader),
-    row(['Dit bestand', 'De antwoorden van jongeren van 12 t/m 18 jaar op de Filmvibe-ervaring.']),
+    row(['Dit bestand', 'De antwoorden van bezoekers van 15 t/m 27 jaar op de Filmvibe-ervaring.']),
     row(['Eén bezoeker', 'Elke regel op het tabblad Sessies is één bezoeker. De nieuwste bezoeker staat bovenaan.']),
     row(['']),
     row(['De tabbladen'], heading),

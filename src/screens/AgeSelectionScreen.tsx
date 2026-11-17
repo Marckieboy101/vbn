@@ -6,7 +6,7 @@ import { Sparkles, Smile, Shield, Rocket } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface AgeOption {
-  id: '12-13' | '14-15' | '16-18';
+  id: '15-17' | '18-22' | '23-27';
   range: string;
   label: string;
   description: string;
@@ -21,24 +21,24 @@ export const AgeSelectionScreen: React.FC = () => {
 
   const ageOptions: AgeOption[] = [
     {
-      id: '12-13',
-      range: '12 - 13 jaar',
+      id: '15-17',
+      range: '15 - 17 jaar',
       label: 'Young Creators',
       description: 'Nieuwsgierig en creatief. Ontdek de vetste nieuwe filmvrienden en trends.',
       icon: <Smile className="w-8 h-8 text-white" />,
       bgGradient: ''
     },
     {
-      id: '14-15',
-      range: '14 - 15 jaar',
+      id: '18-22',
+      range: '18 - 22 jaar',
       label: 'Trendsetters',
       description: 'Grensverleggend en energiek. Ervaar actie, humor en meeslepende verhalen.',
       icon: <Rocket className="w-8 h-8 text-white" />,
       bgGradient: ''
     },
     {
-      id: '16-18',
-      range: '16 - 18 jaar',
+      id: '23-27',
+      range: '23 - 27 jaar',
       label: 'Cinema Con noisseurs',
       description: 'Rijp en scherpzinnig. Duik dieper in complexe plots en meesterlijke films.',
       icon: <Sparkles className="w-8 h-8 text-white" />,
@@ -46,7 +46,7 @@ export const AgeSelectionScreen: React.FC = () => {
     }
   ];
 
-  const handleSelect = (optionId: '12-13' | '14-15' | '16-18') => {
+  const handleSelect = (optionId: '15-17' | '18-22' | '23-27') => {
     if (isTransitioning) return;
     setSelectedId(optionId);
     setIsTransitioning(true);
